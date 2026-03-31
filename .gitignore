@@ -1,0 +1,33 @@
+# === Node.js ===
+node_modules/
+dist/
+*.local
+
+# === Rust / Cargo ===
+src-tauri/target/
+
+# === Tauri ===
+src-tauri/gen/
+src-tauri/WixTools/
+
+# === OS ===
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Env ===
+.env
+.env.*
+!.env.example
+
+# === Logs ===
+*.log
+npm-debug.log*
+

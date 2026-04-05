@@ -1,13 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   WorkEntry,
+  Workplace,
   DailySummary,
   MonthlyReport,
   MonthlyClose,
 } from "../types";
 
 export const api = {
-  clockIn: () => invoke<WorkEntry>("clock_in"),
+  clockIn: (workplaceId: number | null) =>
+    invoke<WorkEntry>("clock_in", { workplaceId }),
 
   clockOut: (entryId: number) =>
     invoke<WorkEntry>("clock_out", { entryId }),
@@ -16,13 +18,15 @@ export const api = {
     workDate: string,
     startTime: string,
     endTime: string,
-    note: string
+    note: string,
+    workplaceId: number | null
   ) =>
     invoke<WorkEntry>("add_manual_entry", {
       workDate,
       startTime,
       endTime,
       note,
+      workplaceId,
     }),
 
   deleteEntry: (entryId: number) =>
@@ -31,14 +35,20 @@ export const api = {
   getDailyEntries: (workDate: string) =>
     invoke<DailySummary>("get_daily_entries", { workDate }),
 
-  getMonthlyReport: (yearMonth: string) =>
-    invoke<MonthlyReport>("get_monthly_report", { yearMonth }),
+  getMonthlyReport: (yearMonth: string, workplaceId?: number | null) =>
+    invoke<MonthlyReport>("get_monthly_report", {
+      yearMonth,
+      workplaceId: workplaceId ?? null,
+    }),
 
   closeMonth: (yearMonth: string) =>
     invoke<MonthlyClose>("close_month", { yearMonth }),
 
-  exportCsv: (yearMonth: string, filePath: string) =>
-    invoke<string>("export_csv", { yearMonth, filePath }),
+  exportCsv: (yearMonth: string, filePath: string, workplaceId?: number | null) =>
+    invoke<string>("export_csv", { yearMonth, filePath, workplaceId: workplaceId ?? null }),
+
+  exportCsvAll: (yearMonth: string, dirPath: string) =>
+    invoke<string>("export_csv_all", { yearMonth, dirPath }),
 
   dumpYearly: (year: number, filePath: string) =>
     invoke<string>("dump_yearly", { year, filePath }),
@@ -48,6 +58,36 @@ export const api = {
   getToday: () => invoke<string>("get_today"),
 
   getCurrentTime: () => invoke<string>("get_current_time"),
+
+  recalculateDurations: () =>
+    invoke<number>("recalculate_durations"),
+
+  // ── Workplace ──────────────────────────────────────────────────
+  getWorkplaces: () => invoke<Workplace[]>("get_workplaces"),
+
+  addWorkplace: (name: string, color: string) =>
+    invoke<Workplace>("add_workplace", { name, color }),
+
+  updateWorkplace: (id: number, name: string, color: string) =>
+    invoke<Workplace>("update_workplace", { id, name, color }),
+
+  deleteWorkplace: (id: number) =>
+    invoke<void>("delete_workplace", { id }),
+
+  setEntryWorkplace: (entryId: number, workplaceId: number | null) =>
+    invoke<WorkEntry>("set_entry_workplace", { entryId, workplaceId }),
+
+  reorderWorkplaces: (ids: number[]) =>
+    invoke<void>("reorder_workplaces", { ids }),
+
+  updateEntry: (
+    entryId: number,
+    startTime: string,
+    endTime: string,
+    note: string,
+    workplaceId: number | null
+  ) =>
+    invoke<WorkEntry>("update_entry", { entryId, startTime, endTime, note, workplaceId }),
 };
 
 // 時間フォーマットユーティリティ

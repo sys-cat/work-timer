@@ -1,3 +1,10 @@
+export interface Workplace {
+  id: number;
+  name: string;
+  color: string;
+  sort_order: number;
+}
+
 export interface WorkEntry {
   id: number;
   work_date: string;
@@ -7,6 +14,7 @@ export interface WorkEntry {
   note: string;
   created_at: string;
   updated_at: string;
+  workplace_id: number | null;
 }
 
 export interface DailySummary {

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { save } from "@tauri-apps/plugin-dialog";
+import { save, open } from "@tauri-apps/plugin-dialog";
 import { api, formatMinutes, formatTimeShort } from "../lib/api";
-import type { MonthlyReport } from "../types";
+import type { MonthlyReport, Workplace } from "../types";
 
 interface Props {
   yearMonth: string;
@@ -9,6 +9,11 @@ interface Props {
   onYearMonthChange: (ym: string) => void;
   onRefresh: (ym?: string) => Promise<void>;
   onDeleteEntry: (entryId: number) => Promise<void>;
+  onSetEntryWorkplace: (entryId: number, workplaceId: number | null) => Promise<void>;
+  onEditEntry: (entryId: number, startTime: string, endTime: string, note: string, workplaceId: number | null) => Promise<void>;
+  workplaces: Workplace[];
+  filterWorkplaceId: number | null;
+  onFilterChange: (workplaceId: number | null) => void;
 }
 
 export default function MonthlyView({
@@ -17,10 +22,21 @@ export default function MonthlyView({
   onYearMonthChange,
   onRefresh,
   onDeleteEntry,
+  onSetEntryWorkplace,
+  onEditEntry,
+  workplaces,
+  filterWorkplaceId,
+  onFilterChange,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [editingEntryId, setEditingEntryId] = useState<number | null>(null);
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [editWorkplaceId, setEditWorkplaceId] = useState<number | null>(null);
 
   const changeMonth = (delta: number) => {
     const [y, m] = yearMonth.split("-").map(Number);
@@ -55,28 +71,41 @@ export default function MonthlyView({
     setError("");
     setMessage("");
     try {
-      const filePath = await save({
-        defaultPath: `勤務表_${yearMonth}.csv`,
-        filters: [{ name: "CSV", extensions: ["csv"] }],
-      });
-      if (!filePath) return;
-      const result = await api.exportCsv(yearMonth, filePath);
-      setMessage(`CSVを出力しました: ${result}`);
+      if (filterWorkplaceId !== null) {
+        // 特定勤務先 → 単一CSVをsaveダイアログで出力
+        const filePath = await save({
+          defaultPath: `勤務表_${yearMonth}.csv`,
+          filters: [{ name: "CSV", extensions: ["csv"] }],
+        });
+        if (!filePath) return;
+        const result = await api.exportCsv(yearMonth, filePath, filterWorkplaceId);
+        setMessage(`CSVを出力しました: ${result}`);
+      } else {
+        // 「全て」→ フォルダ選択 → 勤務先ごとに個別CSV
+        const dir = await open({ directory: true, title: "出力先フォルダを選択" });
+        if (!dir) return;
+        const result = await api.exportCsvAll(yearMonth, dir as string);
+        setMessage(result);
+      }
     } catch (e) {
       setError(String(e));
     }
   };
 
-  const handleDumpYearly = async () => {
-    const year = Number(yearMonth.split("-")[0]);
+  const handleEditStart = (entryId: number, start: string, end: string, note: string, workplaceId: number | null) => {
+    setEditingEntryId(entryId);
+    setEditStart(start.substring(0, 5));
+    setEditEnd(end.substring(0, 5));
+    setEditNote(note);
+    setEditWorkplaceId(workplaceId);
+  };
+
+  const handleEditSave = async () => {
+    if (editingEntryId === null) return;
     try {
-      const filePath = await save({
-        defaultPath: `work_timer_dump_${year}.json`,
-        filters: [{ name: "JSON", extensions: ["json"] }],
-      });
-      if (!filePath) return;
-      const result = await api.dumpYearly(year, filePath);
-      setMessage(`${year}年のデータをダンプしました: ${result}`);
+      setError("");
+      await onEditEntry(editingEntryId, editStart, editEnd, editNote, editWorkplaceId);
+      setEditingEntryId(null);
     } catch (e) {
       setError(String(e));
     }
@@ -140,9 +169,6 @@ export default function MonthlyView({
             )}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn-ghost" onClick={handleDumpYearly}>
-              年次ダンプ
-            </button>
             <button className="btn-ghost" onClick={handleExportCsv} disabled={loading}>
               CSV出力
             </button>
@@ -153,6 +179,32 @@ export default function MonthlyView({
             )}
           </div>
         </div>
+
+        {/* 勤務先フィルタ */}
+        {workplaces.length > 0 && (
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>勤務先</span>
+            <select
+              value={filterWorkplaceId ?? ""}
+              onChange={(e) => onFilterChange(e.target.value ? Number(e.target.value) : null)}
+              style={{
+                fontSize: 13,
+                padding: "4px 8px",
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--border)",
+                background: "var(--bg-card)",
+                color: "var(--text)",
+              }}
+            >
+              <option value="">全て</option>
+              {workplaces.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* サマリー */}
@@ -191,7 +243,13 @@ export default function MonthlyView({
       {/* 日別テーブル */}
       {report && report.daily_summaries.length > 0 ? (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: 130 }} />
+              <col />
+              <col style={{ width: 70 }} />
+              <col style={{ width: 40 }} />
+            </colgroup>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}>
                 <th style={thStyle}>日付</th>
@@ -209,42 +267,159 @@ export default function MonthlyView({
                       {getDayOfWeek(day.work_date)}
                     </span>
                   </td>
-                  <td style={tdStyle}>
-                    {day.entries.map((e, i) => (
-                      <span key={e.id} className="mono">
-                        {i > 0 && (
-                          <span style={{ color: "var(--text-tertiary)", margin: "0 4px" }}>/</span>
-                        )}
-                        {formatTimeShort(e.start_time)}-
-                        {e.end_time ? formatTimeShort(e.end_time) : "??:??"}
-                        <span style={{ color: "var(--text-tertiary)", fontSize: 11, marginLeft: 2 }}>
-                          ({formatMinutes(e.duration_minutes)})
-                        </span>
-                      </span>
-                    ))}
+                  <td style={{ ...tdStyle, padding: 0, overflow: "hidden" }}>
+                    {day.entries.map((e, i) => {
+                      const wp = workplaces.find((w) => w.id === e.workplace_id);
+                      const isEditing = editingEntryId === e.id;
+                      const canEdit = !report.is_closed && !!e.end_time;
+
+                      if (isEditing) {
+                        return (
+                          <div key={e.id} style={{
+                            display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
+                            padding: "6px 14px",
+                            borderBottom: i < day.entries.length - 1 ? "1px solid var(--border)" : undefined,
+                            background: "var(--accent-light)",
+                          }}>
+                            <input
+                              type="time"
+                              value={editStart}
+                              onChange={(ev) => setEditStart(ev.target.value)}
+                              style={{ fontSize: 12, padding: "2px 4px", width: 90 }}
+                            />
+                            <span style={{ fontSize: 12 }}>-</span>
+                            <input
+                              type="time"
+                              value={editEnd}
+                              onChange={(ev) => setEditEnd(ev.target.value)}
+                              style={{ fontSize: 12, padding: "2px 4px", width: 90 }}
+                            />
+                            <select
+                              value={editWorkplaceId ?? ""}
+                              onChange={(ev) => setEditWorkplaceId(ev.target.value ? Number(ev.target.value) : null)}
+                              style={{ fontSize: 12, padding: "2px 4px" }}
+                            >
+                              <option value="">未設定</option>
+                              {workplaces.map((w) => (
+                                <option key={w.id} value={w.id}>{w.name}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="text"
+                              value={editNote}
+                              onChange={(ev) => setEditNote(ev.target.value)}
+                              placeholder="メモ"
+                              style={{ fontSize: 12, padding: "2px 6px", flex: 1, minWidth: 80 }}
+                              onKeyDown={(ev) => ev.key === "Enter" && handleEditSave()}
+                            />
+                            <button
+                              className="btn-primary"
+                              onClick={handleEditSave}
+                              style={{ padding: "2px 10px", fontSize: 12 }}
+                            >
+                              保存
+                            </button>
+                            <button
+                              className="btn-ghost"
+                              onClick={() => setEditingEntryId(null)}
+                              style={{ padding: "2px 8px", fontSize: 12 }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={e.id} style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          padding: "6px 14px",
+                          borderBottom: i < day.entries.length - 1 ? "1px solid var(--border)" : undefined,
+                        }}>
+                          <span className="mono" style={{ flex: "none" }}>
+                            {formatTimeShort(e.start_time)}-
+                            {e.end_time ? formatTimeShort(e.end_time) : "??:??"}
+                            <span style={{ color: "var(--text-tertiary)", fontSize: 11, marginLeft: 2 }}>
+                              ({formatMinutes(e.duration_minutes)})
+                            </span>
+                          </span>
+                          {wp ? (
+                            <span style={{
+                              display: "inline-flex", alignItems: "center", gap: 4,
+                              fontSize: 11, padding: "1px 6px",
+                              background: `${wp.color}22`,
+                              color: wp.color, border: `1px solid ${wp.color}44`,
+                            }}>
+                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: wp.color, display: "inline-block" }} />
+                              {wp.name}
+                            </span>
+                          ) : workplaces.length > 0 && !report.is_closed ? (
+                            <select
+                              value=""
+                              onChange={(ev) => ev.target.value && onSetEntryWorkplace(e.id, Number(ev.target.value))}
+                              style={{
+                                fontSize: 11,
+                                padding: "1px 4px",
+                                border: "1px solid var(--border)",
+                                color: "var(--text-tertiary)",
+                                background: "var(--bg-card)",
+                              }}
+                            >
+                              <option value="">勤務先を設定…</option>
+                              {workplaces.map((w) => (
+                                <option key={w.id} value={w.id}>{w.name}</option>
+                              ))}
+                            </select>
+                          ) : null}
+                          {e.note && (
+                            <span style={{ fontSize: 11, color: "var(--text-secondary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {e.note}
+                            </span>
+                          )}
+                          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+                            {canEdit && (
+                              <button
+                                onClick={() => handleEditStart(e.id, e.start_time, e.end_time!, e.note, e.workplace_id)}
+                                style={{ padding: "1px 6px", fontSize: 11, color: "var(--text-secondary)", background: "transparent" }}
+                              >
+                                編集
+                              </button>
+                            )}
+                            {!report.is_closed && e.end_time && (
+                              confirmDeleteId === e.id ? (
+                                <>
+                                  <span style={{ fontSize: 11, color: "var(--danger)" }}>削除しますか？</span>
+                                  <button
+                                    onClick={async () => { setConfirmDeleteId(null); await onDeleteEntry(e.id); }}
+                                    style={{ padding: "1px 6px", fontSize: 11, color: "var(--danger)", background: "transparent" }}
+                                  >
+                                    削除する
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    style={{ padding: "1px 6px", fontSize: 11, color: "var(--text-secondary)", background: "transparent" }}
+                                  >
+                                    キャンセル
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmDeleteId(e.id)}
+                                  style={{ padding: "1px 6px", fontSize: 11, color: "var(--danger)", background: "transparent" }}
+                                >
+                                  削除
+                                </button>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </td>
                   <td className="mono" style={{ ...tdStyle, textAlign: "right", fontWeight: 500 }}>
                     {formatMinutes(day.total_minutes)}
                   </td>
-                  <td style={tdStyle}>
-                    {!report.is_closed &&
-                      day.entries.map((e) =>
-                        e.end_time ? (
-                          <button
-                            key={e.id}
-                            onClick={() => onDeleteEntry(e.id)}
-                            style={{
-                              padding: "2px 6px",
-                              fontSize: 11,
-                              color: "var(--text-tertiary)",
-                              background: "transparent",
-                            }}
-                          >
-                            ×
-                          </button>
-                        ) : null
-                      )}
-                  </td>
+                  <td style={tdStyle}></td>
                 </tr>
               ))}
             </tbody>

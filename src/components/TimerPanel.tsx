@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { WorkEntry, DailySummary } from "../types";
+import type { WorkEntry, DailySummary, Workplace } from "../types";
 import { formatMinutes, formatTimeShort } from "../lib/api";
 
 interface Props {
@@ -7,9 +7,20 @@ interface Props {
   onClockIn: () => Promise<void>;
   onClockOut: () => Promise<void>;
   todayReport: DailySummary | null;
+  workplaces: Workplace[];
+  selectedWorkplaceId: number | null;
+  onWorkplaceSelect: (id: number | null) => void;
 }
 
-export default function TimerPanel({ activeEntry, onClockIn, onClockOut, todayReport }: Props) {
+export default function TimerPanel({
+  activeEntry,
+  onClockIn,
+  onClockOut,
+  todayReport,
+  workplaces,
+  selectedWorkplaceId,
+  onWorkplaceSelect,
+}: Props) {
   const [now, setNow] = useState(new Date());
   const [loading, setLoading] = useState(false);
 
@@ -20,14 +31,15 @@ export default function TimerPanel({ activeEntry, onClockIn, onClockOut, todayRe
 
   const currentTime = now.toLocaleTimeString("ja-JP", { hour12: false });
 
-  // 勤務中の経過時間を計算
+  // 勤務中の経過時間を計算（日またぎ対応）
   const getElapsed = (): string => {
     if (!activeEntry) return "0:00";
     const [h, m, s] = activeEntry.start_time.split(":").map(Number);
     const startMs = (h * 3600 + m * 60 + (s || 0)) * 1000;
     const nowMs =
       (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) * 1000;
-    const diff = Math.max(0, nowMs - startMs);
+    const DAY_MS = 24 * 3600 * 1000;
+    const diff = nowMs >= startMs ? nowMs - startMs : nowMs + DAY_MS - startMs;
     const mins = Math.floor(diff / 60000);
     return formatMinutes(mins);
   };
@@ -52,6 +64,35 @@ export default function TimerPanel({ activeEntry, onClockIn, onClockOut, todayRe
           {currentTime}
         </div>
 
+        {/* 勤務先セレクタ */}
+        {workplaces.length > 0 && (
+          <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>勤務先</span>
+            <select
+              value={selectedWorkplaceId ?? ""}
+              onChange={(e) => onWorkplaceSelect(e.target.value ? Number(e.target.value) : null)}
+              disabled={!!activeEntry}
+              style={{
+                fontSize: 13,
+                padding: "4px 8px",
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--border)",
+                background: "var(--bg-card)",
+                color: "var(--text)",
+                minWidth: 140,
+                opacity: activeEntry ? 0.6 : 1,
+              }}
+            >
+              <option value="">未設定</option>
+              {workplaces.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {activeEntry ? (
           <div>
             <div style={{ marginBottom: 12 }}>
@@ -59,6 +100,11 @@ export default function TimerPanel({ activeEntry, onClockIn, onClockOut, todayRe
               <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-secondary)" }}>
                 {formatTimeShort(activeEntry.start_time)} から
               </span>
+              {activeEntry.workplace_id != null && workplaces.length > 0 && (
+                <span style={{ marginLeft: 8, fontSize: 12, color: "var(--text-tertiary)" }}>
+                  {workplaces.find((w) => w.id === activeEntry.workplace_id)?.name ?? ""}
+                </span>
+              )}
             </div>
             <div className="mono" style={{ fontSize: 28, fontWeight: 400, marginBottom: 16 }}>
               {getElapsed()}

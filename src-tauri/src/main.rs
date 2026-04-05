@@ -44,6 +44,15 @@ fn main() {
             commands::get_active_entry,
             commands::get_today,
             commands::get_current_time,
+            commands::recalculate_durations,
+            commands::update_entry,
+            commands::export_csv_all,
+            commands::get_workplaces,
+            commands::add_workplace,
+            commands::update_workplace,
+            commands::delete_workplace,
+            commands::set_entry_workplace,
+            commands::reorder_workplaces,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

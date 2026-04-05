@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "./lib/api";
-import type { WorkEntry, MonthlyReport } from "./types";
+import type { WorkEntry, Workplace, MonthlyReport } from "./types";
 import TimerPanel from "./components/TimerPanel";
 import MonthlyView from "./components/MonthlyView";
 import ManualEntry from "./components/ManualEntry";
+import SettingsPanel from "./components/SettingsPanel";
 
-type Tab = "timer" | "monthly" | "manual";
+type Tab = "timer" | "monthly" | "manual" | "settings";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("timer");
@@ -13,32 +14,48 @@ export default function App() {
   const [currentYearMonth, setCurrentYearMonth] = useState("");
   const [activeEntry, setActiveEntry] = useState<WorkEntry | null>(null);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
+  const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
+  const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<number | null>(null);
+  const [monthlyFilterWorkplaceId, setMonthlyFilterWorkplaceId] = useState<number | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
       try {
-        const d = await api.getToday();
+        const [d, active, wps] = await Promise.all([
+          api.getToday(),
+          api.getActiveEntry(),
+          api.getWorkplaces(),
+        ]);
         setToday(d);
         setCurrentYearMonth(d.substring(0, 7));
-        const active = await api.getActiveEntry();
         setActiveEntry(active);
+        setWorkplaces(wps);
       } catch (e) {
         setError(String(e));
       }
     })();
   }, []);
 
+  const refreshWorkplaces = useCallback(async () => {
+    try {
+      const wps = await api.getWorkplaces();
+      setWorkplaces(wps);
+    } catch (e) {
+      setError(String(e));
+    }
+  }, []);
+
   const refreshMonthly = useCallback(async (ym?: string) => {
     try {
       const target = ym || currentYearMonth;
       if (!target) return;
-      const report = await api.getMonthlyReport(target);
+      const report = await api.getMonthlyReport(target, monthlyFilterWorkplaceId);
       setMonthlyReport(report);
     } catch (e) {
       setError(String(e));
     }
-  }, [currentYearMonth]);
+  }, [currentYearMonth, monthlyFilterWorkplaceId]);
 
   useEffect(() => {
     if (currentYearMonth) refreshMonthly();
@@ -47,7 +64,7 @@ export default function App() {
   const handleClockIn = async () => {
     try {
       setError("");
-      const entry = await api.clockIn();
+      const entry = await api.clockIn(selectedWorkplaceId);
       setActiveEntry(entry);
       await refreshMonthly();
     } catch (e) {
@@ -71,11 +88,12 @@ export default function App() {
     workDate: string,
     startTime: string,
     endTime: string,
-    note: string
+    note: string,
+    workplaceId: number | null
   ) => {
     try {
       setError("");
-      await api.addManualEntry(workDate, startTime, endTime, note);
+      await api.addManualEntry(workDate, startTime, endTime, note, workplaceId);
       await refreshMonthly();
       setTab("monthly");
     } catch (e) {
@@ -91,6 +109,36 @@ export default function App() {
     } catch (e) {
       setError(String(e));
     }
+  };
+
+  const handleSetEntryWorkplace = async (entryId: number, workplaceId: number | null) => {
+    try {
+      setError("");
+      await api.setEntryWorkplace(entryId, workplaceId);
+      await refreshMonthly();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const handleEditEntry = async (
+    entryId: number,
+    startTime: string,
+    endTime: string,
+    note: string,
+    workplaceId: number | null
+  ) => {
+    try {
+      setError("");
+      await api.updateEntry(entryId, startTime, endTime, note, workplaceId);
+      await refreshMonthly();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const handleMonthlyFilterChange = (workplaceId: number | null) => {
+    setMonthlyFilterWorkplaceId(workplaceId);
   };
 
   return (
@@ -123,7 +171,7 @@ export default function App() {
         background: "var(--bg-card)", border: "1px solid var(--border)",
         borderRadius: "var(--radius)", padding: 4,
       }}>
-        {([["timer", "打刻"], ["monthly", "勤務表"], ["manual", "手動入力"]] as [Tab, string][]).map(
+        {([["timer", "打刻"], ["monthly", "勤務表"], ["manual", "手動入力"], ["settings", "設定"]] as [Tab, string][]).map(
           ([key, label]) => (
             <button key={key} onClick={() => setTab(key)} style={{
               flex: 1,
@@ -143,6 +191,9 @@ export default function App() {
           onClockIn={handleClockIn}
           onClockOut={handleClockOut}
           todayReport={monthlyReport?.daily_summaries.find((d) => d.work_date === today) ?? null}
+          workplaces={workplaces}
+          selectedWorkplaceId={selectedWorkplaceId}
+          onWorkplaceSelect={setSelectedWorkplaceId}
         />
       )}
       {tab === "monthly" && (
@@ -152,10 +203,23 @@ export default function App() {
           onYearMonthChange={setCurrentYearMonth}
           onRefresh={refreshMonthly}
           onDeleteEntry={handleDeleteEntry}
+          onSetEntryWorkplace={handleSetEntryWorkplace}
+          onEditEntry={handleEditEntry}
+          workplaces={workplaces}
+          filterWorkplaceId={monthlyFilterWorkplaceId}
+          onFilterChange={handleMonthlyFilterChange}
         />
       )}
       {tab === "manual" && (
-        <ManualEntry today={today} onSubmit={handleManualAdd} />
+        <ManualEntry
+          today={today}
+          onSubmit={handleManualAdd}
+          workplaces={workplaces}
+          defaultWorkplaceId={selectedWorkplaceId}
+        />
+      )}
+      {tab === "settings" && (
+        <SettingsPanel workplaces={workplaces} onChanged={refreshWorkplaces} onRefresh={refreshMonthly} />
       )}
     </div>
   );

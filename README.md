@@ -2,6 +2,8 @@
 
 Tauri 2.x + React + TypeScript + SQLite で構築された勤務時間計測デスクトップアプリケーション。
 
+![frontpage](./doc/index.png)
+
 ## 機能
 
 - **リアルタイム打刻**: 出勤/退勤ボタンでワンクリック記録

@@ -19,6 +19,19 @@ export default function App() {
   const [monthlyFilterWorkplaceId, setMonthlyFilterWorkplaceId] = useState<number | null>(null);
   const [error, setError] = useState("");
 
+  const refreshToday = useCallback(async () => {
+    try {
+      const [d, active] = await Promise.all([api.getToday(), api.getActiveEntry()]);
+      setToday((prev) => {
+        if (prev !== d) setCurrentYearMonth(d.substring(0, 7));
+        return d;
+      });
+      setActiveEntry(active);
+    } catch (e) {
+      setError(String(e));
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -36,6 +49,12 @@ export default function App() {
       }
     })();
   }, []);
+
+  // 1分ごとに日付変化を検知して自動リフレッシュ
+  useEffect(() => {
+    const interval = setInterval(refreshToday, 60_000);
+    return () => clearInterval(interval);
+  }, [refreshToday]);
 
   const refreshWorkplaces = useCallback(async () => {
     try {
@@ -64,9 +83,12 @@ export default function App() {
   const handleClockIn = async () => {
     try {
       setError("");
+      const d = await api.getToday();
+      setToday(d);
+      setCurrentYearMonth(d.substring(0, 7));
       const entry = await api.clockIn(selectedWorkplaceId);
       setActiveEntry(entry);
-      await refreshMonthly();
+      await refreshMonthly(d.substring(0, 7));
     } catch (e) {
       setError(String(e));
     }
@@ -78,7 +100,10 @@ export default function App() {
       setError("");
       await api.clockOut(activeEntry.id);
       setActiveEntry(null);
-      await refreshMonthly();
+      const d = await api.getToday();
+      setToday(d);
+      setCurrentYearMonth(d.substring(0, 7));
+      await refreshMonthly(d.substring(0, 7));
     } catch (e) {
       setError(String(e));
     }
@@ -142,7 +167,7 @@ export default function App() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 16px" }}>
       <header style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em", marginBottom: 4 }}>
           Work Timer

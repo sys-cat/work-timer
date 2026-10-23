@@ -102,6 +102,10 @@ export default function MonthlyView({
 
   const handleEditSave = async () => {
     if (editingEntryId === null) return;
+    if (!editStart || !editEnd) {
+      setError("開始時刻と終了時刻を入力してください");
+      return;
+    }
     try {
       setError("");
       await onEditEntry(editingEntryId, editStart, editEnd, editNote, editWorkplaceId);
@@ -248,14 +252,12 @@ export default function MonthlyView({
               <col style={{ width: 130 }} />
               <col />
               <col style={{ width: 70 }} />
-              <col style={{ width: 40 }} />
             </colgroup>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}>
                 <th style={thStyle}>日付</th>
                 <th style={thStyle}>セッション</th>
                 <th style={{ ...thStyle, textAlign: "right" }}>合計</th>
-                <th style={{ ...thStyle, width: 40 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -271,7 +273,7 @@ export default function MonthlyView({
                     {day.entries.map((e, i) => {
                       const wp = workplaces.find((w) => w.id === e.workplace_id);
                       const isEditing = editingEntryId === e.id;
-                      const canEdit = !report.is_closed && !!e.end_time;
+                      const canEdit = !report.is_closed;
 
                       if (isEditing) {
                         return (
@@ -332,7 +334,7 @@ export default function MonthlyView({
 
                       return (
                         <div key={e.id} style={{
-                          display: "flex", alignItems: "center", gap: 6,
+                          display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
                           padding: "6px 14px",
                           borderBottom: i < day.entries.length - 1 ? "1px solid var(--border)" : undefined,
                         }}>
@@ -376,40 +378,22 @@ export default function MonthlyView({
                               {e.note}
                             </span>
                           )}
-                          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+                          <div style={{ marginLeft: "auto", display: "flex", gap: 4, flex: "none" }}>
                             {canEdit && (
                               <button
-                                onClick={() => handleEditStart(e.id, e.start_time, e.end_time!, e.note, e.workplace_id)}
-                                style={{ padding: "1px 6px", fontSize: 11, color: "var(--text-secondary)", background: "transparent" }}
+                                onClick={() => handleEditStart(e.id, e.start_time, e.end_time ?? "", e.note, e.workplace_id)}
+                                style={{ ...rowBtnStyle, color: "var(--text-secondary)" }}
                               >
                                 編集
                               </button>
                             )}
-                            {!report.is_closed && e.end_time && (
-                              confirmDeleteId === e.id ? (
-                                <>
-                                  <span style={{ fontSize: 11, color: "var(--danger)" }}>削除しますか？</span>
-                                  <button
-                                    onClick={async () => { setConfirmDeleteId(null); await onDeleteEntry(e.id); }}
-                                    style={{ padding: "1px 6px", fontSize: 11, color: "var(--danger)", background: "transparent" }}
-                                  >
-                                    削除する
-                                  </button>
-                                  <button
-                                    onClick={() => setConfirmDeleteId(null)}
-                                    style={{ padding: "1px 6px", fontSize: 11, color: "var(--text-secondary)", background: "transparent" }}
-                                  >
-                                    キャンセル
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  onClick={() => setConfirmDeleteId(e.id)}
-                                  style={{ padding: "1px 6px", fontSize: 11, color: "var(--danger)", background: "transparent" }}
-                                >
-                                  削除
-                                </button>
-                              )
+                            {!report.is_closed && (
+                              <button
+                                onClick={() => setConfirmDeleteId(e.id)}
+                                style={{ ...rowBtnStyle, color: "var(--danger)" }}
+                              >
+                                削除
+                              </button>
                             )}
                           </div>
                         </div>
@@ -419,7 +403,6 @@ export default function MonthlyView({
                   <td className="mono" style={{ ...tdStyle, textAlign: "right", fontWeight: 500 }}>
                     {formatMinutes(day.total_minutes)}
                   </td>
-                  <td style={tdStyle}></td>
                 </tr>
               ))}
             </tbody>
@@ -430,7 +413,6 @@ export default function MonthlyView({
                 <td className="mono" style={{ ...tdStyle, textAlign: "right" }}>
                   {formatMinutes(report.total_minutes)}
                 </td>
-                <td></td>
               </tr>
             </tfoot>
           </table>
@@ -443,9 +425,49 @@ export default function MonthlyView({
           この月の勤務記録はありません
         </div>
       )}
+
+      {confirmDeleteId !== null && (
+        <div
+          onClick={() => setConfirmDeleteId(null)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100,
+          }}
+        >
+          <div
+            className="card"
+            onClick={(ev) => ev.stopPropagation()}
+            style={{ width: 280, display: "flex", flexDirection: "column", gap: 16 }}
+          >
+            <div style={{ fontSize: 14 }}>この勤務記録を削除しますか？</div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button className="btn-ghost" onClick={() => setConfirmDeleteId(null)}>
+                キャンセル
+              </button>
+              <button
+                className="btn-danger"
+                onClick={async () => {
+                  const id = confirmDeleteId;
+                  setConfirmDeleteId(null);
+                  await onDeleteEntry(id);
+                }}
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const rowBtnStyle: React.CSSProperties = {
+  padding: "1px 6px",
+  fontSize: 11,
+  background: "transparent",
+  whiteSpace: "nowrap",
+};
 
 const thStyle: React.CSSProperties = {
   padding: "10px 14px",

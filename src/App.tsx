@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "./lib/api";
 import type { WorkEntry, Workplace, MonthlyReport } from "./types";
 import TimerPanel from "./components/TimerPanel";
@@ -12,7 +12,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("timer");
   const [today, setToday] = useState("");
   const [currentYearMonth, setCurrentYearMonth] = useState("");
-  const [activeEntry, setActiveEntry] = useState<WorkEntry | null>(null);
+  const [activeEntries, setActiveEntries] = useState<WorkEntry[]>([]);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
   const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<number | null>(null);
@@ -21,12 +21,12 @@ export default function App() {
 
   const refreshToday = useCallback(async () => {
     try {
-      const [d, active] = await Promise.all([api.getToday(), api.getActiveEntry()]);
+      const [d, active] = await Promise.all([api.getToday(), api.getActiveEntries()]);
       setToday((prev) => {
         if (prev !== d) setCurrentYearMonth(d.substring(0, 7));
         return d;
       });
-      setActiveEntry(active);
+      setActiveEntries(active);
     } catch (e) {
       setError(String(e));
     }
@@ -37,12 +37,12 @@ export default function App() {
       try {
         const [d, active, wps] = await Promise.all([
           api.getToday(),
-          api.getActiveEntry(),
+          api.getActiveEntries(),
           api.getWorkplaces(),
         ]);
         setToday(d);
         setCurrentYearMonth(d.substring(0, 7));
-        setActiveEntry(active);
+        setActiveEntries(active);
         setWorkplaces(wps);
       } catch (e) {
         setError(String(e));
@@ -76,6 +76,30 @@ export default function App() {
     }
   }, [currentYearMonth, monthlyFilterWorkplaceId]);
 
+  // 日付が変わったら即座に月次レポートを再取得（本日の勤務記録を切り替える）
+  const prevTodayRef = useRef("");
+  useEffect(() => {
+    const prev = prevTodayRef.current;
+    prevTodayRef.current = today;
+    if (prev && today && prev !== today) refreshMonthly(today.substring(0, 7));
+  }, [today, refreshMonthly]);
+
+  // 5分ごとに月次レポートを再取得
+  useEffect(() => {
+    const interval = setInterval(() => refreshMonthly(), 5 * 60_000);
+    return () => clearInterval(interval);
+  }, [refreshMonthly]);
+
+  // ウィンドウにフォーカスが戻ったら最新の状態に更新
+  useEffect(() => {
+    const onFocus = () => {
+      refreshToday();
+      refreshMonthly();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refreshToday, refreshMonthly]);
+
   useEffect(() => {
     if (currentYearMonth) refreshMonthly();
   }, [currentYearMonth, refreshMonthly]);
@@ -87,19 +111,18 @@ export default function App() {
       setToday(d);
       setCurrentYearMonth(d.substring(0, 7));
       const entry = await api.clockIn(selectedWorkplaceId);
-      setActiveEntry(entry);
+      setActiveEntries((prev) => [...prev, entry]);
       await refreshMonthly(d.substring(0, 7));
     } catch (e) {
       setError(String(e));
     }
   };
 
-  const handleClockOut = async () => {
-    if (!activeEntry) return;
+  const handleClockOut = async (entryId: number) => {
     try {
       setError("");
-      await api.clockOut(activeEntry.id);
-      setActiveEntry(null);
+      await api.clockOut(entryId);
+      setActiveEntries((prev) => prev.filter((e) => e.id !== entryId));
       const d = await api.getToday();
       setToday(d);
       setCurrentYearMonth(d.substring(0, 7));
@@ -212,7 +235,7 @@ export default function App() {
 
       {tab === "timer" && (
         <TimerPanel
-          activeEntry={activeEntry}
+          activeEntries={activeEntries}
           onClockIn={handleClockIn}
           onClockOut={handleClockOut}
           todayReport={monthlyReport?.daily_summaries.find((d) => d.work_date === today) ?? null}

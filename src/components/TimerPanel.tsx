@@ -3,9 +3,9 @@ import type { WorkEntry, DailySummary, Workplace } from "../types";
 import { formatMinutes, formatTimeShort } from "../lib/api";
 
 interface Props {
-  activeEntry: WorkEntry | null;
+  activeEntries: WorkEntry[];
   onClockIn: () => Promise<void>;
-  onClockOut: () => Promise<void>;
+  onClockOut: (entryId: number) => Promise<void>;
   todayReport: DailySummary | null;
   workplaces: Workplace[];
   selectedWorkplaceId: number | null;
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function TimerPanel({
-  activeEntry,
+  activeEntries,
   onClockIn,
   onClockOut,
   todayReport,
@@ -22,7 +22,7 @@ export default function TimerPanel({
   onWorkplaceSelect,
 }: Props) {
   const [now, setNow] = useState(new Date());
-  const [loading, setLoading] = useState(false);
+  const [loadingId, setLoadingId] = useState<number | "in" | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -32,9 +32,8 @@ export default function TimerPanel({
   const currentTime = now.toLocaleTimeString("ja-JP", { hour12: false });
 
   // 勤務中の経過時間を計算（日またぎ対応）
-  const getElapsed = (): string => {
-    if (!activeEntry) return "0:00";
-    const [h, m, s] = activeEntry.start_time.split(":").map(Number);
+  const getElapsed = (entry: WorkEntry): string => {
+    const [h, m, s] = entry.start_time.split(":").map(Number);
     const startMs = (h * 3600 + m * 60 + (s || 0)) * 1000;
     const nowMs =
       (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) * 1000;
@@ -44,14 +43,19 @@ export default function TimerPanel({
     return formatMinutes(mins);
   };
 
-  const handleAction = async (action: () => Promise<void>) => {
-    setLoading(true);
+  const handleAction = async (id: number | "in", action: () => Promise<void>) => {
+    setLoadingId(id);
     try {
       await action();
     } finally {
-      setLoading(false);
+      setLoadingId(null);
     }
   };
+
+  // 選択中の勤務先がすでに勤務中か（未設定も1つの勤務先として扱う）
+  const selectedActive = activeEntries.some(
+    (e) => (e.workplace_id ?? null) === selectedWorkplaceId,
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -71,7 +75,6 @@ export default function TimerPanel({
             <select
               value={selectedWorkplaceId ?? ""}
               onChange={(e) => onWorkplaceSelect(e.target.value ? Number(e.target.value) : null)}
-              disabled={!!activeEntry}
               style={{
                 fontSize: 13,
                 padding: "4px 8px",
@@ -80,7 +83,6 @@ export default function TimerPanel({
                 background: "var(--bg-card)",
                 color: "var(--text)",
                 minWidth: 140,
-                opacity: activeEntry ? 0.6 : 1,
               }}
             >
               <option value="">未設定</option>
@@ -93,40 +95,56 @@ export default function TimerPanel({
           </div>
         )}
 
-        {activeEntry ? (
-          <div>
-            <div style={{ marginBottom: 12 }}>
-              <span className="badge badge-active">勤務中</span>
-              <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-secondary)" }}>
-                {formatTimeShort(activeEntry.start_time)} から
-              </span>
-              {activeEntry.workplace_id != null && workplaces.length > 0 && (
-                <span style={{ marginLeft: 8, fontSize: 12, color: "var(--text-tertiary)" }}>
-                  {workplaces.find((w) => w.id === activeEntry.workplace_id)?.name ?? ""}
-                </span>
-              )}
-            </div>
-            <div className="mono" style={{ fontSize: 28, fontWeight: 400, marginBottom: 16 }}>
-              {getElapsed()}
-            </div>
-            <button
-              className="btn-danger"
-              onClick={() => handleAction(onClockOut)}
-              disabled={loading}
-              style={{ padding: "12px 48px", fontSize: 15 }}
-            >
-              {loading ? "処理中..." : "退勤"}
-            </button>
+        <button
+          className="btn-success"
+          onClick={() => handleAction("in", onClockIn)}
+          disabled={loadingId !== null || selectedActive}
+          style={{ padding: "12px 48px", fontSize: 15, marginTop: 8 }}
+        >
+          {loadingId === "in" ? "処理中..." : selectedActive ? "勤務中" : "出勤"}
+        </button>
+
+        {activeEntries.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }}>
+            {activeEntries.map((entry) => {
+              const wp = workplaces.find((w) => w.id === entry.workplace_id);
+              return (
+                <div
+                  key={entry.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    padding: "12px 16px",
+                    background: "var(--bg)",
+                    borderRadius: "var(--radius)",
+                  }}
+                >
+                  <div style={{ textAlign: "left" }}>
+                    <span className="badge badge-active">勤務中</span>
+                    <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-secondary)" }}>
+                      {formatTimeShort(entry.start_time)} から
+                    </span>
+                    <div style={{ fontSize: 12, color: wp?.color ?? "var(--text-tertiary)", marginTop: 4 }}>
+                      {wp?.name ?? "未設定"}
+                    </div>
+                  </div>
+                  <div className="mono" style={{ fontSize: 24, fontWeight: 400 }}>
+                    {getElapsed(entry)}
+                  </div>
+                  <button
+                    className="btn-danger"
+                    onClick={() => handleAction(entry.id, () => onClockOut(entry.id))}
+                    disabled={loadingId !== null}
+                    style={{ padding: "8px 24px", fontSize: 14 }}
+                  >
+                    {loadingId === entry.id ? "処理中..." : "退勤"}
+                  </button>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <button
-            className="btn-success"
-            onClick={() => handleAction(onClockIn)}
-            disabled={loading}
-            style={{ padding: "12px 48px", fontSize: 15, marginTop: 8 }}
-          >
-            {loading ? "処理中..." : "出勤"}
-          </button>
         )}
       </div>
 

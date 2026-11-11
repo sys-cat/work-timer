@@ -160,6 +160,22 @@ pub async fn clock_in(
     let now = Local::now();
     let work_date = now.format("%Y-%m-%d").to_string();
     let start_time = now.format("%H:%M:%S").to_string();
+    let yesterday = (now - Duration::days(1)).format("%Y-%m-%d").to_string();
+
+    // 同一勤務先（未設定含む）の二重打刻を拒否
+    let duplicate = sqlx::query(
+        "SELECT id FROM work_entries WHERE end_time IS NULL AND workplace_id IS $1 AND work_date IN ($2, $3)",
+    )
+    .bind(workplace_id)
+    .bind(&work_date)
+    .bind(&yesterday)
+    .fetch_optional(&*db)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    if duplicate.is_some() {
+        return Err("この勤務先はすでに勤務中です".to_string());
+    }
 
     let result = sqlx::query(
         "INSERT INTO work_entries (work_date, start_time, note, workplace_id) VALUES ($1, $2, '', $3) RETURNING *",
@@ -695,25 +711,25 @@ pub async fn dump_yearly(
     Ok(file_path)
 }
 
-/// 進行中のエントリ取得（打刻中かどうかの確認用）
+/// 進行中のエントリ一覧取得（勤務先ごとに最大1件、複数同時可）
 #[tauri::command]
-pub async fn get_active_entry(state: State<'_, AppState>) -> Result<Option<WorkEntry>, String> {
+pub async fn get_active_entries(state: State<'_, AppState>) -> Result<Vec<WorkEntry>, String> {
     let db = state.db.lock().await;
     let now = Local::now();
     let today = now.format("%Y-%m-%d").to_string();
     // 日をまたいで勤務中の場合に備えて昨日も検索対象にする
     let yesterday = (now - Duration::days(1)).format("%Y-%m-%d").to_string();
 
-    let entry: Option<WorkEntry> = sqlx::query_as(
-        "SELECT * FROM work_entries WHERE work_date IN ($1, $2) AND end_time IS NULL ORDER BY work_date DESC, start_time DESC LIMIT 1",
+    let entries: Vec<WorkEntry> = sqlx::query_as(
+        "SELECT * FROM work_entries WHERE work_date IN ($1, $2) AND end_time IS NULL ORDER BY work_date, start_time",
     )
     .bind(&today)
     .bind(&yesterday)
-    .fetch_optional(&*db)
+    .fetch_all(&*db)
     .await
     .map_err(|e| e.to_string())?;
 
-    Ok(entry)
+    Ok(entries)
 }
 
 /// 今日の日付を取得

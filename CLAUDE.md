@@ -84,7 +84,7 @@ const entry = await invoke<WorkEntry>("clock_in");
 | `close_month` | 月次締め処理 |
 | `export_csv` | CSV出力 |
 | `dump_yearly` | 年次ダンプ（JSON） |
-| `get_active_entry` | 勤務中エントリ取得 |
+| `get_active_entries` | 勤務中エントリ取得 |
 | `get_today` | 今日の日付取得 |
 | `get_current_time` | 現在時刻取得 |
 

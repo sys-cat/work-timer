@@ -53,7 +53,7 @@ export const api = {
   dumpYearly: (year: number, filePath: string) =>
     invoke<string>("dump_yearly", { year, filePath }),
 
-  getActiveEntry: () => invoke<WorkEntry | null>("get_active_entry"),
+  getActiveEntries: () => invoke<WorkEntry[]>("get_active_entries"),
 
   getToday: () => invoke<string>("get_today"),
 

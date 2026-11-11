@@ -41,7 +41,7 @@ fn main() {
             commands::close_month,
             commands::export_csv,
             commands::dump_yearly,
-            commands::get_active_entry,
+            commands::get_active_entries,
             commands::get_today,
             commands::get_current_time,
             commands::recalculate_durations,

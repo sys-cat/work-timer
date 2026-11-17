@@ -65,11 +65,25 @@ export default function App() {
     }
   }, []);
 
+  // 非同期取得中に月・勤務先フィルタが変わった場合、古い結果で表示を上書きしないための参照
+  const selectionRef = useRef({ ym: "", wp: null as number | null });
+  selectionRef.current = { ym: currentYearMonth, wp: monthlyFilterWorkplaceId };
+  const monthlyRequestIdRef = useRef(0);
+
   const refreshMonthly = useCallback(async (ym?: string) => {
+    const requestId = ++monthlyRequestIdRef.current;
     try {
       const target = ym || currentYearMonth;
       if (!target) return;
       const report = await api.getMonthlyReport(target, monthlyFilterWorkplaceId);
+      const sel = selectionRef.current;
+      if (
+        requestId !== monthlyRequestIdRef.current ||
+        target !== sel.ym ||
+        monthlyFilterWorkplaceId !== sel.wp
+      ) {
+        return;
+      }
       setMonthlyReport(report);
     } catch (e) {
       setError(String(e));

@@ -38,6 +38,9 @@ export default function MonthlyView({
   const [editNote, setEditNote] = useState("");
   const [editWorkplaceId, setEditWorkplaceId] = useState<number | null>(null);
 
+  // 月切り替え直後は前月のレポートが残っているため、締め状態を操作できるのは表示月と一致するときだけ
+  const reportMatchesMonth = report?.year_month === yearMonth;
+
   const changeMonth = (delta: number) => {
     const [y, m] = yearMonth.split("-").map(Number);
     const d = new Date(y, m - 1 + delta, 1);
@@ -199,11 +202,11 @@ export default function MonthlyView({
               CSV出力
             </button>
             {report?.is_closed ? (
-              <button className="btn-ghost" onClick={handleReopen} disabled={loading}>
+              <button className="btn-ghost" onClick={handleReopen} disabled={loading || !reportMatchesMonth}>
                 締めを解除
               </button>
             ) : (
-              <button className="btn-primary" onClick={handleClose} disabled={loading}>
+              <button className="btn-primary" onClick={handleClose} disabled={loading || !reportMatchesMonth}>
                 今月の勤務を締める
               </button>
             )}

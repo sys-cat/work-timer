@@ -46,16 +46,17 @@ export default function MonthlyView({
   };
 
   const handleClose = async () => {
-    // window.confirm は tauri-plugin-dialog により Promise を返す関数に置き換わるため ask() を使う
-    const ok = await ask(
-      `${yearMonth} の勤務を締めます。\n締め処理後はこの月の記録を変更できなくなります。\nよろしいですか？`,
-      { title: "月次締め", kind: "warning" }
-    );
-    if (!ok) return;
+    // 確認ダイアログ表示中の多重起動を防ぐため、確認前にローディング状態にする
     setLoading(true);
     setError("");
     setMessage("");
     try {
+      // window.confirm は tauri-plugin-dialog により Promise を返す関数に置き換わるため ask() を使う
+      const ok = await ask(
+        `${yearMonth} の勤務を締めます。\n締め処理後はこの月の記録を変更できなくなります。\nよろしいですか？`,
+        { title: "月次締め", kind: "warning" }
+      );
+      if (!ok) return;
       const result = await api.closeMonth(yearMonth);
       setMessage(
         `${yearMonth} を締めました。合計: ${formatMinutes(result.total_minutes)} (${result.working_days}日)`
@@ -63,8 +64,9 @@ export default function MonthlyView({
       await onRefresh();
     } catch (e) {
       setError(String(e));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleExportCsv = async () => {

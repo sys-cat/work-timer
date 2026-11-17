@@ -69,6 +69,26 @@ export default function MonthlyView({
     }
   };
 
+  const handleReopen = async () => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const ok = await ask(
+        `${yearMonth} の締めを解除します。\n解除後はこの月の記録を再び変更できます。\n年次ダンプ済みの場合、ダンプ内容と差異が生じる可能性があります。\nよろしいですか？`,
+        { title: "締めの解除", kind: "warning" }
+      );
+      if (!ok) return;
+      await api.reopenMonth(yearMonth);
+      setMessage(`${yearMonth} の締めを解除しました。`);
+      await onRefresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleExportCsv = async () => {
     setError("");
     setMessage("");
@@ -178,7 +198,11 @@ export default function MonthlyView({
             <button className="btn-ghost" onClick={handleExportCsv} disabled={loading}>
               CSV出力
             </button>
-            {!report?.is_closed && (
+            {report?.is_closed ? (
+              <button className="btn-ghost" onClick={handleReopen} disabled={loading}>
+                締めを解除
+              </button>
+            ) : (
               <button className="btn-primary" onClick={handleClose} disabled={loading}>
                 今月の勤務を締める
               </button>

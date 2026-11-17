@@ -39,6 +39,7 @@ fn main() {
             commands::get_daily_entries,
             commands::get_monthly_report,
             commands::close_month,
+            commands::reopen_month,
             commands::export_csv,
             commands::dump_yearly,
             commands::get_active_entries,

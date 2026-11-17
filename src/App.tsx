@@ -87,6 +87,8 @@ export default function App() {
       setMonthlyReport(report);
     } catch (e) {
       setError(String(e));
+      // 最新の取得が失敗した場合は、古い締め状態のまま操作されないようレポートを破棄する
+      if (requestId === monthlyRequestIdRef.current) setMonthlyReport(null);
     }
   }, []);
 

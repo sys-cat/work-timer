@@ -117,7 +117,10 @@ export default function App() {
   }, [refreshToday, refreshMonthly]);
 
   useEffect(() => {
-    if (currentYearMonth) refreshMonthly();
+    if (!currentYearMonth) return;
+    // 月・勤務先の切替直後は、新しい取得が完了するまで旧レポートを表示・操作させない
+    setMonthlyReport(null);
+    refreshMonthly();
   }, [currentYearMonth, monthlyFilterWorkplaceId, refreshMonthly]);
 
   const handleClockIn = async () => {

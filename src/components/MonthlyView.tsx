@@ -6,6 +6,7 @@ import type { MonthlyReport, Workplace } from "../types";
 interface Props {
   yearMonth: string;
   report: MonthlyReport | null;
+  reportStatus: "loading" | "ready" | "error";
   onYearMonthChange: (ym: string) => void;
   onRefresh: (ym?: string) => Promise<void>;
   onDeleteEntry: (entryId: number) => Promise<void>;
@@ -19,6 +20,7 @@ interface Props {
 export default function MonthlyView({
   yearMonth,
   report,
+  reportStatus,
   onYearMonthChange,
   onRefresh,
   onDeleteEntry,
@@ -451,7 +453,11 @@ export default function MonthlyView({
           className="card"
           style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)", fontSize: 13 }}
         >
-          この月の勤務記録はありません
+          {reportStatus === "loading"
+            ? "読み込み中..."
+            : reportStatus === "error"
+              ? "勤務記録を取得できませんでした"
+              : "この月の勤務記録はありません"}
         </div>
       )}
 

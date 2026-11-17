@@ -14,6 +14,7 @@ export default function App() {
   const [currentYearMonth, setCurrentYearMonth] = useState("");
   const [activeEntries, setActiveEntries] = useState<WorkEntry[]>([]);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
+  const [monthlyStatus, setMonthlyStatus] = useState<"loading" | "ready" | "error">("loading");
   const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<number | null>(null);
   const [monthlyFilterWorkplaceId, setMonthlyFilterWorkplaceId] = useState<number | null>(null);
@@ -85,10 +86,14 @@ export default function App() {
         return;
       }
       setMonthlyReport(report);
+      setMonthlyStatus("ready");
     } catch (e) {
       setError(String(e));
       // 最新の取得が失敗した場合は、古い締め状態のまま操作されないようレポートを破棄する
-      if (requestId === monthlyRequestIdRef.current) setMonthlyReport(null);
+      if (requestId === monthlyRequestIdRef.current) {
+        setMonthlyReport(null);
+        setMonthlyStatus("error");
+      }
     }
   }, []);
 
@@ -120,6 +125,7 @@ export default function App() {
     if (!currentYearMonth) return;
     // 月・勤務先の切替直後は、新しい取得が完了するまで旧レポートを表示・操作させない
     setMonthlyReport(null);
+    setMonthlyStatus("loading");
     refreshMonthly();
   }, [currentYearMonth, monthlyFilterWorkplaceId, refreshMonthly]);
 
@@ -267,6 +273,7 @@ export default function App() {
         <MonthlyView
           yearMonth={currentYearMonth}
           report={monthlyReport}
+          reportStatus={monthlyStatus}
           onYearMonthChange={setCurrentYearMonth}
           onRefresh={refreshMonthly}
           onDeleteEntry={handleDeleteEntry}

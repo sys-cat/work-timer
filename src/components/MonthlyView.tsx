@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { save, open } from "@tauri-apps/plugin-dialog";
+import { save, open, ask } from "@tauri-apps/plugin-dialog";
 import { api, formatMinutes, formatTimeShort } from "../lib/api";
 import type { MonthlyReport, Workplace } from "../types";
 
@@ -46,12 +46,12 @@ export default function MonthlyView({
   };
 
   const handleClose = async () => {
-    if (
-      !confirm(
-        `${yearMonth} の勤務を締めます。\n締め処理後はこの月の記録を変更できなくなります。\nよろしいですか？`
-      )
-    )
-      return;
+    // window.confirm は tauri-plugin-dialog により Promise を返す関数に置き換わるため ask() を使う
+    const ok = await ask(
+      `${yearMonth} の勤務を締めます。\n締め処理後はこの月の記録を変更できなくなります。\nよろしいですか？`,
+      { title: "月次締め", kind: "warning" }
+    );
+    if (!ok) return;
     setLoading(true);
     setError("");
     setMessage("");

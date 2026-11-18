@@ -56,6 +56,18 @@ npm run dev
 npm run build
 ```
 
+## リリース（GitHub Actions）
+
+`v*` タグを push すると `.github/workflows/release.yml` が Windows / macOS(universal) / Linux(ubuntu-22.04) でビルドし、GitHub Release に**下書き**でインストーラを添付する。
+
+```bash
+# version（package.json / tauri.conf.json / Cargo.toml）を揃えてから
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+- コード署名はしていない（macOS は Gatekeeper、Windows は SmartScreen の警告が出る）
+- 下書きの Release を GitHub 上で確認して公開する
+
 ## アーキテクチャ
 
 ### フロントエンド → バックエンド通信

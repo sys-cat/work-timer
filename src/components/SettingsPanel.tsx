@@ -91,6 +91,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
         >
           <span>{error}</span>
           <button
+            type="button"
             onClick={() => setError("")}
             style={{ background: "none", color: "var(--danger)", padding: "2px 8px", fontSize: 12 }}
           >
@@ -122,6 +123,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                 {/* 並び替えボタン */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <button
+                    type="button"
                     onClick={() => handleMove(i, -1)}
                     disabled={i === 0 || loading}
                     style={{
@@ -134,6 +136,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                     ▲
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleMove(i, 1)}
                     disabled={i === workplaces.length - 1 || loading}
                     style={{
@@ -173,6 +176,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       onKeyDown={(e) => e.key === "Enter" && handleEditSave()}
                     />
                     <button
+                      type="button"
                       className="btn-primary"
                       onClick={handleEditSave}
                       disabled={loading}
@@ -181,6 +185,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       保存
                     </button>
                     <button
+                      type="button"
                       className="btn-ghost"
                       onClick={() => setEditId(null)}
                       style={{ padding: "4px 12px", fontSize: 12 }}
@@ -195,6 +200,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       「{w.name}」を削除しますか？紐付きの勤務記録は未設定になります。
                     </span>
                     <button
+                      type="button"
                       className="btn-danger"
                       onClick={handleDeleteConfirm}
                       disabled={loading}
@@ -203,6 +209,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       削除する
                     </button>
                     <button
+                      type="button"
                       className="btn-ghost"
                       onClick={() => setConfirmDeleteId(null)}
                       style={{ padding: "4px 12px", fontSize: 12 }}
@@ -224,6 +231,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                     />
                     <span style={{ flex: 1, fontSize: 13 }}>{w.name}</span>
                     <button
+                      type="button"
                       onClick={() => handleEditStart(w)}
                       style={{
                         padding: "4px 10px",
@@ -235,6 +243,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       編集
                     </button>
                     <button
+                      type="button"
                       onClick={() => setConfirmDeleteId(w.id)}
                       disabled={loading}
                       style={{
@@ -277,6 +286,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           />
           <button
+            type="button"
             className="btn-primary"
             onClick={handleAdd}
             disabled={loading || !newName.trim()}
@@ -317,6 +327,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
             max={2099}
           />
           <button
+            type="button"
             className="btn-ghost"
             disabled={loading}
             onClick={() =>
@@ -360,6 +371,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
           </div>
         )}
         <button
+          type="button"
           className="btn-ghost"
           disabled={loading}
           onClick={() =>

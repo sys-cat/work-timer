@@ -195,7 +195,7 @@ export default function MonthlyView({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button className="btn-ghost" onClick={() => changeMonth(-1)}>
+            <button type="button" className="btn-ghost" onClick={() => changeMonth(-1)}>
               ←
             </button>
             <input
@@ -204,17 +204,23 @@ export default function MonthlyView({
               onChange={(e) => onYearMonthChange(e.target.value)}
               style={{ fontSize: 15, fontWeight: 500, minWidth: 160 }}
             />
-            <button className="btn-ghost" onClick={() => changeMonth(1)}>
+            <button type="button" className="btn-ghost" onClick={() => changeMonth(1)}>
               →
             </button>
             {report?.is_closed && <span className="badge badge-closed">締め済み</span>}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn-ghost" onClick={handleExportCsv} disabled={loading}>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={handleExportCsv}
+              disabled={loading}
+            >
               CSV出力
             </button>
             {report?.is_closed ? (
               <button
+                type="button"
                 className="btn-ghost"
                 onClick={handleReopen}
                 disabled={loading || !reportMatchesMonth}
@@ -223,6 +229,7 @@ export default function MonthlyView({
               </button>
             ) : (
               <button
+                type="button"
                 className="btn-primary"
                 onClick={handleClose}
                 disabled={loading || !reportMatchesMonth}
@@ -382,6 +389,7 @@ export default function MonthlyView({
                               onKeyDown={(ev) => ev.key === "Enter" && handleEditSave()}
                             />
                             <button
+                              type="button"
                               className="btn-primary"
                               onClick={handleEditSave}
                               style={{ padding: "2px 10px", fontSize: 12 }}
@@ -389,6 +397,7 @@ export default function MonthlyView({
                               保存
                             </button>
                             <button
+                              type="button"
                               className="btn-ghost"
                               onClick={() => setEditingEntryId(null)}
                               style={{ padding: "2px 8px", fontSize: 12 }}
@@ -487,6 +496,7 @@ export default function MonthlyView({
                           >
                             {canEdit && (
                               <button
+                                type="button"
                                 onClick={() =>
                                   handleEditStart(
                                     e.id,
@@ -503,6 +513,7 @@ export default function MonthlyView({
                             )}
                             {!report.is_closed && (
                               <button
+                                type="button"
                                 onClick={() => setConfirmDeleteId(e.id)}
                                 style={{ ...rowBtnStyle, color: "var(--danger)" }}
                               >
@@ -564,10 +575,11 @@ export default function MonthlyView({
           >
             <div style={{ fontSize: 14 }}>この勤務記録を削除しますか？</div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button className="btn-ghost" onClick={() => setConfirmDeleteId(null)}>
+              <button type="button" className="btn-ghost" onClick={() => setConfirmDeleteId(null)}>
                 キャンセル
               </button>
               <button
+                type="button"
                 className="btn-danger"
                 onClick={async () => {
                   const id = confirmDeleteId;

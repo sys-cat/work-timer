@@ -103,6 +103,7 @@ export default function TimerPanel({
         )}
 
         <button
+          type="button"
           className="btn-success"
           onClick={() => handleAction("in", onClockIn)}
           disabled={loadingId !== null || selectedActive}
@@ -147,6 +148,7 @@ export default function TimerPanel({
                     {getElapsed(entry)}
                   </div>
                   <button
+                    type="button"
                     className="btn-danger"
                     onClick={() => handleAction(entry.id, () => onClockOut(entry.id))}
                     disabled={loadingId !== null}

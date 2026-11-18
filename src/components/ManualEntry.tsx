@@ -108,6 +108,7 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
       </div>
 
       <button
+        type="button"
         className="btn-primary"
         onClick={handleSubmit}
         disabled={loading || !startTime || !endTime}

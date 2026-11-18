@@ -239,6 +239,7 @@ export default function App() {
         >
           <span>{error}</span>
           <button
+            type="button"
             onClick={() => setError("")}
             style={{ background: "none", color: "var(--danger)", padding: "2px 8px", fontSize: 12 }}
           >
@@ -267,6 +268,7 @@ export default function App() {
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
+            type="button"
             key={key}
             onClick={() => setTab(key)}
             style={{

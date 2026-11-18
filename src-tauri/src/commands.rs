@@ -12,7 +12,6 @@ use tokio::sync::Mutex;
 
 pub struct AppState {
     pub db: Arc<Mutex<SqlitePool>>,
-    pub data_dir: PathBuf,
 }
 
 // ─── Models ──────────────────────────────────────────────────────

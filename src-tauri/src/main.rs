@@ -25,7 +25,6 @@ fn main() {
 
                 app_handle.manage(commands::AppState {
                     db: Arc::new(Mutex::new(pool)),
-                    data_dir,
                 });
             });
 

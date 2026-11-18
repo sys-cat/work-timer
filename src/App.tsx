@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { api } from "./lib/api";
-import type { WorkEntry, Workplace, MonthlyReport } from "./types";
-import TimerPanel from "./components/TimerPanel";
-import MonthlyView from "./components/MonthlyView";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ManualEntry from "./components/ManualEntry";
+import MonthlyView from "./components/MonthlyView";
 import SettingsPanel from "./components/SettingsPanel";
+import TimerPanel from "./components/TimerPanel";
+import { api } from "./lib/api";
+import type { MonthlyReport, WorkEntry, Workplace } from "./types";
 
 type Tab = "timer" | "monthly" | "manual" | "settings";
 
@@ -121,6 +121,7 @@ export default function App() {
     return () => window.removeEventListener("focus", onFocus);
   }, [refreshToday, refreshMonthly]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: monthlyFilterWorkplaceId は refreshMonthly が ref 経由で参照するため、フィルタ切替時の再取得トリガーとして依存に残す
   useEffect(() => {
     if (!currentYearMonth) return;
     // 月・勤務先の切替直後は、新しい取得が完了するまで旧レポートを表示・操作させない
@@ -162,7 +163,7 @@ export default function App() {
     startTime: string,
     endTime: string,
     note: string,
-    workplaceId: number | null
+    workplaceId: number | null,
   ) => {
     try {
       setError("");
@@ -199,7 +200,7 @@ export default function App() {
     startTime: string,
     endTime: string,
     note: string,
-    workplaceId: number | null
+    workplaceId: number | null,
   ) => {
     try {
       setError("");
@@ -220,42 +221,70 @@ export default function App() {
         <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em", marginBottom: 4 }}>
           Work Timer
         </h1>
-        <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-          勤務時間管理 — {today}
-        </p>
+        <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>勤務時間管理 — {today}</p>
       </header>
 
       {error && (
-        <div style={{
-          background: "var(--danger-light)", color: "var(--danger)",
-          padding: "10px 14px", borderRadius: "var(--radius)", marginBottom: 16,
-          fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center",
-        }}>
+        <div
+          style={{
+            background: "var(--danger-light)",
+            color: "var(--danger)",
+            padding: "10px 14px",
+            borderRadius: "var(--radius)",
+            marginBottom: 16,
+            fontSize: 13,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <span>{error}</span>
-          <button onClick={() => setError("")}
-            style={{ background: "none", color: "var(--danger)", padding: "2px 8px", fontSize: 12 }}>
+          <button
+            type="button"
+            onClick={() => setError("")}
+            style={{ background: "none", color: "var(--danger)", padding: "2px 8px", fontSize: 12 }}
+          >
             ✕
           </button>
         </div>
       )}
 
-      <nav style={{
-        display: "flex", gap: 4, marginBottom: 20,
-        background: "var(--bg-card)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius)", padding: 4,
-      }}>
-        {([["timer", "打刻"], ["monthly", "勤務表"], ["manual", "手動入力"], ["settings", "設定"]] as [Tab, string][]).map(
-          ([key, label]) => (
-            <button key={key} onClick={() => setTab(key)} style={{
+      <nav
+        style={{
+          display: "flex",
+          gap: 4,
+          marginBottom: 20,
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: 4,
+        }}
+      >
+        {(
+          [
+            ["timer", "打刻"],
+            ["monthly", "勤務表"],
+            ["manual", "手動入力"],
+            ["settings", "設定"],
+          ] as [Tab, string][]
+        ).map(([key, label]) => (
+          <button
+            type="button"
+            key={key}
+            onClick={() => setTab(key)}
+            style={{
               flex: 1,
               background: tab === key ? "var(--accent)" : "transparent",
               color: tab === key ? "white" : "var(--text-secondary)",
-              borderRadius: 7, padding: "8px 0", fontSize: 13, fontWeight: 500,
-            }}>
-              {label}
-            </button>
-          )
-        )}
+              borderRadius: 7,
+              padding: "8px 0",
+              fontSize: 13,
+              fontWeight: 500,
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </nav>
 
       {tab === "timer" && (
@@ -293,7 +322,11 @@ export default function App() {
         />
       )}
       {tab === "settings" && (
-        <SettingsPanel workplaces={workplaces} onChanged={refreshWorkplaces} onRefresh={refreshMonthly} />
+        <SettingsPanel
+          workplaces={workplaces}
+          onChanged={refreshWorkplaces}
+          onRefresh={refreshMonthly}
+        />
       )}
     </div>
   );

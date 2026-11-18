@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import type { WorkEntry, DailySummary, Workplace } from "../types";
+import { useEffect, useState } from "react";
 import { formatMinutes, formatTimeShort } from "../lib/api";
+import type { DailySummary, WorkEntry, Workplace } from "../types";
 
 interface Props {
   activeEntries: WorkEntry[];
@@ -35,8 +35,7 @@ export default function TimerPanel({
   const getElapsed = (entry: WorkEntry): string => {
     const [h, m, s] = entry.start_time.split(":").map(Number);
     const startMs = (h * 3600 + m * 60 + (s || 0)) * 1000;
-    const nowMs =
-      (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) * 1000;
+    const nowMs = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) * 1000;
     const DAY_MS = 24 * 3600 * 1000;
     const diff = nowMs >= startMs ? nowMs - startMs : nowMs + DAY_MS - startMs;
     const mins = Math.floor(diff / 60000);
@@ -70,7 +69,15 @@ export default function TimerPanel({
 
         {/* 勤務先セレクタ */}
         {workplaces.length > 0 && (
-          <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <div
+            style={{
+              marginBottom: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
             <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>勤務先</span>
             <select
               value={selectedWorkplaceId ?? ""}
@@ -96,6 +103,7 @@ export default function TimerPanel({
         )}
 
         <button
+          type="button"
           className="btn-success"
           onClick={() => handleAction("in", onClockIn)}
           disabled={loadingId !== null || selectedActive}
@@ -126,7 +134,13 @@ export default function TimerPanel({
                     <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-secondary)" }}>
                       {formatTimeShort(entry.start_time)} から
                     </span>
-                    <div style={{ fontSize: 12, color: wp?.color ?? "var(--text-tertiary)", marginTop: 4 }}>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: wp?.color ?? "var(--text-tertiary)",
+                        marginTop: 4,
+                      }}
+                    >
                       {wp?.name ?? "未設定"}
                     </div>
                   </div>
@@ -134,6 +148,7 @@ export default function TimerPanel({
                     {getElapsed(entry)}
                   </div>
                   <button
+                    type="button"
                     className="btn-danger"
                     onClick={() => handleAction(entry.id, () => onClockOut(entry.id))}
                     disabled={loadingId !== null}
@@ -153,9 +168,7 @@ export default function TimerPanel({
         <h2 style={{ fontSize: 15, fontWeight: 500, marginBottom: 12 }}>本日の勤務記録</h2>
 
         {!todayReport || todayReport.entries.length === 0 ? (
-          <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-            本日の記録はまだありません
-          </p>
+          <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>本日の記録はまだありません</p>
         ) : (
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -172,9 +185,7 @@ export default function TimerPanel({
                     fontSize: 13,
                   }}
                 >
-                  <span style={{ color: "var(--text-tertiary)", minWidth: 20 }}>
-                    #{i + 1}
-                  </span>
+                  <span style={{ color: "var(--text-tertiary)", minWidth: 20 }}>#{i + 1}</span>
                   <span className="mono">
                     {formatTimeShort(entry.start_time)}
                     {" — "}

@@ -1,5 +1,5 @@
+import { ask, open, save } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
-import { save, open, ask } from "@tauri-apps/plugin-dialog";
 import { api, formatMinutes, formatTimeShort } from "../lib/api";
 import type { MonthlyReport, Workplace } from "../types";
 
@@ -11,7 +11,13 @@ interface Props {
   onRefresh: (ym?: string) => Promise<void>;
   onDeleteEntry: (entryId: number) => Promise<void>;
   onSetEntryWorkplace: (entryId: number, workplaceId: number | null) => Promise<void>;
-  onEditEntry: (entryId: number, startTime: string, endTime: string, note: string, workplaceId: number | null) => Promise<void>;
+  onEditEntry: (
+    entryId: number,
+    startTime: string,
+    endTime: string,
+    note: string,
+    workplaceId: number | null,
+  ) => Promise<void>;
   workplaces: Workplace[];
   filterWorkplaceId: number | null;
   onFilterChange: (workplaceId: number | null) => void;
@@ -59,12 +65,12 @@ export default function MonthlyView({
       // window.confirm は tauri-plugin-dialog により Promise を返す関数に置き換わるため ask() を使う
       const ok = await ask(
         `${yearMonth} の勤務を締めます。\n締め処理後はこの月の記録を変更できなくなります。\nよろしいですか？`,
-        { title: "月次締め", kind: "warning" }
+        { title: "月次締め", kind: "warning" },
       );
       if (!ok) return;
       const result = await api.closeMonth(yearMonth);
       setMessage(
-        `${yearMonth} を締めました。合計: ${formatMinutes(result.total_minutes)} (${result.working_days}日)`
+        `${yearMonth} を締めました。合計: ${formatMinutes(result.total_minutes)} (${result.working_days}日)`,
       );
       await onRefresh();
     } catch (e) {
@@ -81,7 +87,7 @@ export default function MonthlyView({
     try {
       const ok = await ask(
         `${yearMonth} の締めを解除します。\n解除後はこの月の記録を再び変更できます。\n年次ダンプ済みの場合、ダンプ内容と差異が生じる可能性があります。\nよろしいですか？`,
-        { title: "締めの解除", kind: "warning" }
+        { title: "締めの解除", kind: "warning" },
       );
       if (!ok) return;
       await api.reopenMonth(yearMonth);
@@ -119,7 +125,13 @@ export default function MonthlyView({
     }
   };
 
-  const handleEditStart = (entryId: number, start: string, end: string, note: string, workplaceId: number | null) => {
+  const handleEditStart = (
+    entryId: number,
+    start: string,
+    end: string,
+    note: string,
+    workplaceId: number | null,
+  ) => {
     setEditingEntryId(entryId);
     setEditStart(start.substring(0, 5));
     setEditEnd(end.substring(0, 5));
@@ -183,7 +195,7 @@ export default function MonthlyView({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button className="btn-ghost" onClick={() => changeMonth(-1)}>
+            <button type="button" className="btn-ghost" onClick={() => changeMonth(-1)}>
               ←
             </button>
             <input
@@ -192,23 +204,36 @@ export default function MonthlyView({
               onChange={(e) => onYearMonthChange(e.target.value)}
               style={{ fontSize: 15, fontWeight: 500, minWidth: 160 }}
             />
-            <button className="btn-ghost" onClick={() => changeMonth(1)}>
+            <button type="button" className="btn-ghost" onClick={() => changeMonth(1)}>
               →
             </button>
-            {report?.is_closed && (
-              <span className="badge badge-closed">締め済み</span>
-            )}
+            {report?.is_closed && <span className="badge badge-closed">締め済み</span>}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn-ghost" onClick={handleExportCsv} disabled={loading}>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={handleExportCsv}
+              disabled={loading}
+            >
               CSV出力
             </button>
             {report?.is_closed ? (
-              <button className="btn-ghost" onClick={handleReopen} disabled={loading || !reportMatchesMonth}>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={handleReopen}
+                disabled={loading || !reportMatchesMonth}
+              >
                 締めを解除
               </button>
             ) : (
-              <button className="btn-primary" onClick={handleClose} disabled={loading || !reportMatchesMonth}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleClose}
+                disabled={loading || !reportMatchesMonth}
+              >
                 今月の勤務を締める
               </button>
             )}
@@ -278,7 +303,14 @@ export default function MonthlyView({
       {/* 日別テーブル */}
       {report && report.daily_summaries.length > 0 ? (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: 13,
+              tableLayout: "fixed",
+            }}
+          >
             <colgroup>
               <col style={{ width: 130 }} />
               <col />
@@ -308,12 +340,19 @@ export default function MonthlyView({
 
                       if (isEditing) {
                         return (
-                          <div key={e.id} style={{
-                            display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
-                            padding: "6px 14px",
-                            borderBottom: i < day.entries.length - 1 ? "1px solid var(--border)" : undefined,
-                            background: "var(--accent-light)",
-                          }}>
+                          <div
+                            key={e.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              flexWrap: "wrap",
+                              padding: "6px 14px",
+                              borderBottom:
+                                i < day.entries.length - 1 ? "1px solid var(--border)" : undefined,
+                              background: "var(--accent-light)",
+                            }}
+                          >
                             <input
                               type="time"
                               value={editStart}
@@ -329,12 +368,16 @@ export default function MonthlyView({
                             />
                             <select
                               value={editWorkplaceId ?? ""}
-                              onChange={(ev) => setEditWorkplaceId(ev.target.value ? Number(ev.target.value) : null)}
+                              onChange={(ev) =>
+                                setEditWorkplaceId(ev.target.value ? Number(ev.target.value) : null)
+                              }
                               style={{ fontSize: 12, padding: "2px 4px" }}
                             >
                               <option value="">未設定</option>
                               {workplaces.map((w) => (
-                                <option key={w.id} value={w.id}>{w.name}</option>
+                                <option key={w.id} value={w.id}>
+                                  {w.name}
+                                </option>
                               ))}
                             </select>
                             <input
@@ -346,6 +389,7 @@ export default function MonthlyView({
                               onKeyDown={(ev) => ev.key === "Enter" && handleEditSave()}
                             />
                             <button
+                              type="button"
                               className="btn-primary"
                               onClick={handleEditSave}
                               style={{ padding: "2px 10px", fontSize: 12 }}
@@ -353,6 +397,7 @@ export default function MonthlyView({
                               保存
                             </button>
                             <button
+                              type="button"
                               className="btn-ghost"
                               onClick={() => setEditingEntryId(null)}
                               style={{ padding: "2px 8px", fontSize: 12 }}
@@ -364,32 +409,58 @@ export default function MonthlyView({
                       }
 
                       return (
-                        <div key={e.id} style={{
-                          display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
-                          padding: "6px 14px",
-                          borderBottom: i < day.entries.length - 1 ? "1px solid var(--border)" : undefined,
-                        }}>
+                        <div
+                          key={e.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            flexWrap: "wrap",
+                            padding: "6px 14px",
+                            borderBottom:
+                              i < day.entries.length - 1 ? "1px solid var(--border)" : undefined,
+                          }}
+                        >
                           <span className="mono" style={{ flex: "none" }}>
                             {formatTimeShort(e.start_time)}-
                             {e.end_time ? formatTimeShort(e.end_time) : "??:??"}
-                            <span style={{ color: "var(--text-tertiary)", fontSize: 11, marginLeft: 2 }}>
+                            <span
+                              style={{ color: "var(--text-tertiary)", fontSize: 11, marginLeft: 2 }}
+                            >
                               ({formatMinutes(e.duration_minutes)})
                             </span>
                           </span>
                           {wp ? (
-                            <span style={{
-                              display: "inline-flex", alignItems: "center", gap: 4,
-                              fontSize: 11, padding: "1px 6px",
-                              background: `${wp.color}22`,
-                              color: wp.color, border: `1px solid ${wp.color}44`,
-                            }}>
-                              <span style={{ width: 6, height: 6, borderRadius: "50%", background: wp.color, display: "inline-block" }} />
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 11,
+                                padding: "1px 6px",
+                                background: `${wp.color}22`,
+                                color: wp.color,
+                                border: `1px solid ${wp.color}44`,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: "50%",
+                                  background: wp.color,
+                                  display: "inline-block",
+                                }}
+                              />
                               {wp.name}
                             </span>
                           ) : workplaces.length > 0 && !report.is_closed ? (
                             <select
                               value=""
-                              onChange={(ev) => ev.target.value && onSetEntryWorkplace(e.id, Number(ev.target.value))}
+                              onChange={(ev) =>
+                                ev.target.value &&
+                                onSetEntryWorkplace(e.id, Number(ev.target.value))
+                              }
                               style={{
                                 fontSize: 11,
                                 padding: "1px 4px",
@@ -400,19 +471,41 @@ export default function MonthlyView({
                             >
                               <option value="">勤務先を設定…</option>
                               {workplaces.map((w) => (
-                                <option key={w.id} value={w.id}>{w.name}</option>
+                                <option key={w.id} value={w.id}>
+                                  {w.name}
+                                </option>
                               ))}
                             </select>
                           ) : null}
                           {e.note && (
-                            <span style={{ fontSize: 11, color: "var(--text-secondary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "var(--text-secondary)",
+                                flex: 1,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
                               {e.note}
                             </span>
                           )}
-                          <div style={{ marginLeft: "auto", display: "flex", gap: 4, flex: "none" }}>
+                          <div
+                            style={{ marginLeft: "auto", display: "flex", gap: 4, flex: "none" }}
+                          >
                             {canEdit && (
                               <button
-                                onClick={() => handleEditStart(e.id, e.start_time, e.end_time ?? "", e.note, e.workplace_id)}
+                                type="button"
+                                onClick={() =>
+                                  handleEditStart(
+                                    e.id,
+                                    e.start_time,
+                                    e.end_time ?? "",
+                                    e.note,
+                                    e.workplace_id,
+                                  )
+                                }
                                 style={{ ...rowBtnStyle, color: "var(--text-secondary)" }}
                               >
                                 編集
@@ -420,6 +513,7 @@ export default function MonthlyView({
                             )}
                             {!report.is_closed && (
                               <button
+                                type="button"
                                 onClick={() => setConfirmDeleteId(e.id)}
                                 style={{ ...rowBtnStyle, color: "var(--danger)" }}
                               >
@@ -462,13 +556,22 @@ export default function MonthlyView({
       )}
 
       {confirmDeleteId !== null && (
+        // biome-ignore lint/a11y/noStaticElementInteractions: 背景クリックで閉じる補助操作。キーボード操作は「キャンセル」ボタンで可能
+        // biome-ignore lint/a11y/useKeyWithClickEvents: 同上
         <div
           onClick={() => setConfirmDeleteId(null)}
           style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)",
-            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100,
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
           }}
         >
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: 背景クリックで閉じないよう伝播を止めるだけで、操作対象ではない */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: 同上 */}
           <div
             className="card"
             onClick={(ev) => ev.stopPropagation()}
@@ -476,10 +579,11 @@ export default function MonthlyView({
           >
             <div style={{ fontSize: 14 }}>この勤務記録を削除しますか？</div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button className="btn-ghost" onClick={() => setConfirmDeleteId(null)}>
+              <button type="button" className="btn-ghost" onClick={() => setConfirmDeleteId(null)}>
                 キャンセル
               </button>
               <button
+                type="button"
                 className="btn-danger"
                 onClick={async () => {
                   const id = confirmDeleteId;

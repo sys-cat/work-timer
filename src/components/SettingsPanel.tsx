@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
+import { useState } from "react";
 import { api } from "../lib/api";
 import type { Workplace } from "../types";
 
@@ -91,6 +91,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
         >
           <span>{error}</span>
           <button
+            type="button"
             onClick={() => setError("")}
             style={{ background: "none", color: "var(--danger)", padding: "2px 8px", fontSize: 12 }}
           >
@@ -104,9 +105,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
         <h2 style={{ fontSize: 15, fontWeight: 500, marginBottom: 12 }}>勤務先</h2>
 
         {workplaces.length === 0 ? (
-          <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-            勤務先が登録されていません
-          </p>
+          <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>勤務先が登録されていません</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
             {workplaces.map((w, i) => (
@@ -124,6 +123,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                 {/* 並び替えボタン */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <button
+                    type="button"
                     onClick={() => handleMove(i, -1)}
                     disabled={i === 0 || loading}
                     style={{
@@ -136,6 +136,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                     ▲
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleMove(i, 1)}
                     disabled={i === workplaces.length - 1 || loading}
                     style={{
@@ -159,7 +160,13 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       type="color"
                       value={editColor}
                       onChange={(e) => setEditColor(e.target.value)}
-                      style={{ width: 32, height: 28, padding: 2, border: "1px solid var(--border)", borderRadius: 4 }}
+                      style={{
+                        width: 32,
+                        height: 28,
+                        padding: 2,
+                        border: "1px solid var(--border)",
+                        borderRadius: 4,
+                      }}
                     />
                     <input
                       type="text"
@@ -168,10 +175,21 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       style={{ flex: 1, fontSize: 13 }}
                       onKeyDown={(e) => e.key === "Enter" && handleEditSave()}
                     />
-                    <button className="btn-primary" onClick={handleEditSave} disabled={loading} style={{ padding: "4px 12px", fontSize: 12 }}>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={handleEditSave}
+                      disabled={loading}
+                      style={{ padding: "4px 12px", fontSize: 12 }}
+                    >
                       保存
                     </button>
-                    <button className="btn-ghost" onClick={() => setEditId(null)} style={{ padding: "4px 12px", fontSize: 12 }}>
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      onClick={() => setEditId(null)}
+                      style={{ padding: "4px 12px", fontSize: 12 }}
+                    >
                       キャンセル
                     </button>
                   </>
@@ -182,6 +200,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       「{w.name}」を削除しますか？紐付きの勤務記録は未設定になります。
                     </span>
                     <button
+                      type="button"
                       className="btn-danger"
                       onClick={handleDeleteConfirm}
                       disabled={loading}
@@ -190,6 +209,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                       削除する
                     </button>
                     <button
+                      type="button"
                       className="btn-ghost"
                       onClick={() => setConfirmDeleteId(null)}
                       style={{ padding: "4px 12px", fontSize: 12 }}
@@ -211,15 +231,27 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
                     />
                     <span style={{ flex: 1, fontSize: 13 }}>{w.name}</span>
                     <button
+                      type="button"
                       onClick={() => handleEditStart(w)}
-                      style={{ padding: "4px 10px", fontSize: 12, color: "var(--text-secondary)", background: "transparent" }}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                        background: "transparent",
+                      }}
                     >
                       編集
                     </button>
                     <button
+                      type="button"
                       onClick={() => setConfirmDeleteId(w.id)}
                       disabled={loading}
-                      style={{ padding: "4px 10px", fontSize: 12, color: "var(--danger)", background: "transparent" }}
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: 12,
+                        color: "var(--danger)",
+                        background: "transparent",
+                      }}
                     >
                       削除
                     </button>
@@ -236,7 +268,14 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
             type="color"
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
-            style={{ width: 36, height: 32, padding: 2, border: "1px solid var(--border)", borderRadius: 4, flexShrink: 0 }}
+            style={{
+              width: 36,
+              height: 32,
+              padding: 2,
+              border: "1px solid var(--border)",
+              borderRadius: 4,
+              flexShrink: 0,
+            }}
           />
           <input
             type="text"
@@ -247,6 +286,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           />
           <button
+            type="button"
             className="btn-primary"
             onClick={handleAdd}
             disabled={loading || !newName.trim()}
@@ -264,11 +304,16 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
           指定した年の全勤務データをJSONファイルに出力します。
         </p>
         {dumpMessage && (
-          <div style={{
-            padding: "8px 12px", marginBottom: 10,
-            background: "var(--success-light)", color: "var(--success)",
-            borderRadius: "var(--radius)", fontSize: 13,
-          }}>
+          <div
+            style={{
+              padding: "8px 12px",
+              marginBottom: 10,
+              background: "var(--success-light)",
+              color: "var(--success)",
+              borderRadius: "var(--radius)",
+              fontSize: 13,
+            }}
+          >
             {dumpMessage}
           </div>
         )}
@@ -282,6 +327,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
             max={2099}
           />
           <button
+            type="button"
             className="btn-ghost"
             disabled={loading}
             onClick={() =>
@@ -307,18 +353,25 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
       <div className="card">
         <h2 style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>勤務時間の再計算</h2>
         <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
-          開始・終了時刻から duration_minutes を再計算します。日またぎ補正が適用されていない古いデータの修正に使用してください。
+          開始・終了時刻から duration_minutes
+          を再計算します。日またぎ補正が適用されていない古いデータの修正に使用してください。
         </p>
         {recalcMessage && (
-          <div style={{
-            padding: "8px 12px", marginBottom: 10,
-            background: "var(--success-light)", color: "var(--success)",
-            borderRadius: "var(--radius)", fontSize: 13,
-          }}>
+          <div
+            style={{
+              padding: "8px 12px",
+              marginBottom: 10,
+              background: "var(--success-light)",
+              color: "var(--success)",
+              borderRadius: "var(--radius)",
+              fontSize: 13,
+            }}
+          >
             {recalcMessage}
           </div>
         )}
         <button
+          type="button"
           className="btn-ghost"
           disabled={loading}
           onClick={() =>
@@ -328,7 +381,7 @@ export default function SettingsPanel({ workplaces, onChanged, onRefresh }: Prop
               setRecalcMessage(
                 count > 0
                   ? `${count} 件のエントリを更新しました。`
-                  : "更新対象のエントリはありませんでした。"
+                  : "更新対象のエントリはありませんでした。",
               );
               if (count > 0) await onRefresh();
             })

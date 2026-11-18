@@ -3,7 +3,13 @@ import type { Workplace } from "../types";
 
 interface Props {
   today: string;
-  onSubmit: (workDate: string, startTime: string, endTime: string, note: string, workplaceId: number | null) => Promise<void>;
+  onSubmit: (
+    workDate: string,
+    startTime: string,
+    endTime: string,
+    note: string,
+    workplaceId: number | null,
+  ) => Promise<void>;
   workplaces: Workplace[];
   defaultWorkplaceId: number | null;
 }
@@ -20,7 +26,7 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
     if (!workDate || !startTime || !endTime) return;
     setLoading(true);
     try {
-      await onSubmit(workDate, startTime + ":00", endTime + ":00", note, workplaceId);
+      await onSubmit(workDate, `${startTime}:00`, `${endTime}:00`, note, workplaceId);
       setStartTime("");
       setEndTime("");
       setNote("");
@@ -42,24 +48,34 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
 
       {workplaces.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <label style={fieldLabel}>勤務先</label>
+          <label htmlFor="manual-workplace" style={fieldLabel}>
+            勤務先
+          </label>
           <select
+            id="manual-workplace"
             value={workplaceId ?? ""}
             onChange={(e) => setWorkplaceId(e.target.value ? Number(e.target.value) : null)}
             style={{ width: "100%" }}
           >
             <option value="">未設定</option>
             {workplaces.map((w) => (
-              <option key={w.id} value={w.id}>{w.name}</option>
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
             ))}
           </select>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}
+      >
         <div>
-          <label style={fieldLabel}>日付</label>
+          <label htmlFor="manual-date" style={fieldLabel}>
+            日付
+          </label>
           <input
+            id="manual-date"
             type="date"
             value={workDate}
             onChange={(e) => setWorkDate(e.target.value)}
@@ -67,8 +83,11 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
           />
         </div>
         <div>
-          <label style={fieldLabel}>開始時刻</label>
+          <label htmlFor="manual-start" style={fieldLabel}>
+            開始時刻
+          </label>
           <input
+            id="manual-start"
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
@@ -76,8 +95,11 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
           />
         </div>
         <div>
-          <label style={fieldLabel}>終了時刻</label>
+          <label htmlFor="manual-end" style={fieldLabel}>
+            終了時刻
+          </label>
           <input
+            id="manual-end"
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
@@ -87,8 +109,11 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <label style={fieldLabel}>メモ（任意）</label>
+        <label htmlFor="manual-note" style={fieldLabel}>
+          メモ（任意）
+        </label>
         <input
+          id="manual-note"
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -98,6 +123,7 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
       </div>
 
       <button
+        type="button"
         className="btn-primary"
         onClick={handleSubmit}
         disabled={loading || !startTime || !endTime}

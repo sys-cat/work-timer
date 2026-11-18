@@ -12,7 +12,6 @@ use tokio::sync::Mutex;
 
 pub struct AppState {
     pub db: Arc<Mutex<SqlitePool>>,
-    pub data_dir: PathBuf,
 }
 
 // ─── Models ──────────────────────────────────────────────────────
@@ -406,13 +405,12 @@ pub async fn get_monthly_report(
     }
 
     // 締め済みかチェック
-    let is_closed: bool =
-        sqlx::query("SELECT id FROM monthly_closes WHERE year_month = $1")
-            .bind(&year_month)
-            .fetch_optional(&*db)
-            .await
-            .map_err(|e| e.to_string())?
-            .is_some();
+    let is_closed: bool = sqlx::query("SELECT id FROM monthly_closes WHERE year_month = $1")
+        .bind(&year_month)
+        .fetch_optional(&*db)
+        .await
+        .map_err(|e| e.to_string())?
+        .is_some();
 
     Ok(MonthlyReport {
         year_month,
@@ -444,16 +442,18 @@ pub async fn close_month(
 
     // 進行中のエントリがないかチェック
     let pattern = format!("{}%", year_month);
-    let open_entries: Vec<WorkEntry> = sqlx::query_as(
-        "SELECT * FROM work_entries WHERE work_date LIKE $1 AND end_time IS NULL",
-    )
-    .bind(&pattern)
-    .fetch_all(&*db)
-    .await
-    .map_err(|e| e.to_string())?;
+    let open_entries: Vec<WorkEntry> =
+        sqlx::query_as("SELECT * FROM work_entries WHERE work_date LIKE $1 AND end_time IS NULL")
+            .bind(&pattern)
+            .fetch_all(&*db)
+            .await
+            .map_err(|e| e.to_string())?;
 
     if !open_entries.is_empty() {
-        return Err("未完了の勤務記録があります。すべての勤務を終了してから締め処理を行ってください。".to_string());
+        return Err(
+            "未完了の勤務記録があります。すべての勤務を終了してから締め処理を行ってください。"
+                .to_string(),
+        );
     }
 
     // 月の合計を算出
@@ -478,22 +478,18 @@ pub async fn close_month(
     .await
     .map_err(|e| e.to_string())?;
 
-    let close: MonthlyClose =
-        sqlx::query_as("SELECT * FROM monthly_closes WHERE year_month = $1")
-            .bind(&year_month)
-            .fetch_one(&*db)
-            .await
-            .map_err(|e| e.to_string())?;
+    let close: MonthlyClose = sqlx::query_as("SELECT * FROM monthly_closes WHERE year_month = $1")
+        .bind(&year_month)
+        .fetch_one(&*db)
+        .await
+        .map_err(|e| e.to_string())?;
 
     Ok(close)
 }
 
 /// 月次締めの解除（締め記録を削除する）
 #[tauri::command]
-pub async fn reopen_month(
-    state: State<'_, AppState>,
-    year_month: String,
-) -> Result<(), String> {
+pub async fn reopen_month(state: State<'_, AppState>, year_month: String) -> Result<(), String> {
     let db = state.db.lock().await;
 
     let result = sqlx::query("DELETE FROM monthly_closes WHERE year_month = $1")
@@ -519,8 +515,16 @@ fn write_csv_to_file(
 ) -> Result<String, String> {
     let mut wtr = csv::Writer::from_path(file_path).map_err(|e| e.to_string())?;
 
-    wtr.write_record(&["日付", "開始時刻", "終了時刻", "勤務時間(分)", "勤務時間", "勤務先", "メモ"])
-        .map_err(|e| e.to_string())?;
+    wtr.write_record([
+        "日付",
+        "開始時刻",
+        "終了時刻",
+        "勤務時間(分)",
+        "勤務時間",
+        "勤務先",
+        "メモ",
+    ])
+    .map_err(|e| e.to_string())?;
 
     let mut daily_totals: std::collections::BTreeMap<String, i64> =
         std::collections::BTreeMap::new();
@@ -533,7 +537,7 @@ fn write_csv_to_file(
             .and_then(|id| wp_map.get(&id))
             .map(|s| s.as_str())
             .unwrap_or("");
-        wtr.write_record(&[
+        wtr.write_record([
             &entry.work_date,
             &entry.start_time,
             entry.end_time.as_deref().unwrap_or(""),
@@ -548,12 +552,12 @@ fn write_csv_to_file(
         grand_total += entry.duration_minutes;
     }
 
-    wtr.write_record(&["", "", "", "", "", "", ""])
+    wtr.write_record(["", "", "", "", "", "", ""])
         .map_err(|e| e.to_string())?;
-    wtr.write_record(&["--- 日別合計 ---", "", "", "", "", "", ""])
+    wtr.write_record(["--- 日別合計 ---", "", "", "", "", "", ""])
         .map_err(|e| e.to_string())?;
     for (date, minutes) in &daily_totals {
-        wtr.write_record(&[
+        wtr.write_record([
             date.as_str(),
             "",
             "",
@@ -565,9 +569,9 @@ fn write_csv_to_file(
         .map_err(|e| e.to_string())?;
     }
 
-    wtr.write_record(&["", "", "", "", "", "", ""])
+    wtr.write_record(["", "", "", "", "", "", ""])
         .map_err(|e| e.to_string())?;
-    wtr.write_record(&[
+    wtr.write_record([
         &format!("月合計 ({})", year_month),
         "",
         "",
@@ -659,8 +663,9 @@ pub async fn export_csv_all(
         if wp_entries.is_empty() {
             continue;
         }
-        let safe_name =
-            wp.name.replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], "_");
+        let safe_name = wp
+            .name
+            .replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], "_");
         let fp = format!("{}/{}_{}.csv", dir_path, year_month, safe_name);
         write_csv_to_file(&wp_entries, &wp_map, &fp, &year_month)?;
         file_count += 1;
@@ -701,13 +706,12 @@ pub async fn dump_yearly(
     .await
     .map_err(|e| e.to_string())?;
 
-    let closes: Vec<MonthlyClose> = sqlx::query_as(
-        "SELECT * FROM monthly_closes WHERE year_month LIKE $1 ORDER BY year_month",
-    )
-    .bind(format!("{}%", year))
-    .fetch_all(&*db)
-    .await
-    .map_err(|e| e.to_string())?;
+    let closes: Vec<MonthlyClose> =
+        sqlx::query_as("SELECT * FROM monthly_closes WHERE year_month LIKE $1 ORDER BY year_month")
+            .bind(format!("{}%", year))
+            .fetch_all(&*db)
+            .await
+            .map_err(|e| e.to_string())?;
 
     let dump = serde_json::json!({
         "year": year,
@@ -720,14 +724,12 @@ pub async fn dump_yearly(
         .map_err(|e| e.to_string())?;
 
     // ダンプ記録を保存
-    sqlx::query(
-        "INSERT OR REPLACE INTO yearly_dumps (year, file_path) VALUES ($1, $2)",
-    )
-    .bind(year)
-    .bind(&file_path)
-    .execute(&*db)
-    .await
-    .map_err(|e| e.to_string())?;
+    sqlx::query("INSERT OR REPLACE INTO yearly_dumps (year, file_path) VALUES ($1, $2)")
+        .bind(year)
+        .bind(&file_path)
+        .execute(&*db)
+        .await
+        .map_err(|e| e.to_string())?;
 
     Ok(file_path)
 }

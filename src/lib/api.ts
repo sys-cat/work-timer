@@ -1,25 +1,17 @@
 import { invoke } from "@tauri-apps/api/core";
-import type {
-  WorkEntry,
-  Workplace,
-  DailySummary,
-  MonthlyReport,
-  MonthlyClose,
-} from "../types";
+import type { DailySummary, MonthlyClose, MonthlyReport, WorkEntry, Workplace } from "../types";
 
 export const api = {
-  clockIn: (workplaceId: number | null) =>
-    invoke<WorkEntry>("clock_in", { workplaceId }),
+  clockIn: (workplaceId: number | null) => invoke<WorkEntry>("clock_in", { workplaceId }),
 
-  clockOut: (entryId: number) =>
-    invoke<WorkEntry>("clock_out", { entryId }),
+  clockOut: (entryId: number) => invoke<WorkEntry>("clock_out", { entryId }),
 
   addManualEntry: (
     workDate: string,
     startTime: string,
     endTime: string,
     note: string,
-    workplaceId: number | null
+    workplaceId: number | null,
   ) =>
     invoke<WorkEntry>("add_manual_entry", {
       workDate,
@@ -29,11 +21,9 @@ export const api = {
       workplaceId,
     }),
 
-  deleteEntry: (entryId: number) =>
-    invoke<void>("delete_entry", { entryId }),
+  deleteEntry: (entryId: number) => invoke<void>("delete_entry", { entryId }),
 
-  getDailyEntries: (workDate: string) =>
-    invoke<DailySummary>("get_daily_entries", { workDate }),
+  getDailyEntries: (workDate: string) => invoke<DailySummary>("get_daily_entries", { workDate }),
 
   getMonthlyReport: (yearMonth: string, workplaceId?: number | null) =>
     invoke<MonthlyReport>("get_monthly_report", {
@@ -41,11 +31,9 @@ export const api = {
       workplaceId: workplaceId ?? null,
     }),
 
-  closeMonth: (yearMonth: string) =>
-    invoke<MonthlyClose>("close_month", { yearMonth }),
+  closeMonth: (yearMonth: string) => invoke<MonthlyClose>("close_month", { yearMonth }),
 
-  reopenMonth: (yearMonth: string) =>
-    invoke<void>("reopen_month", { yearMonth }),
+  reopenMonth: (yearMonth: string) => invoke<void>("reopen_month", { yearMonth }),
 
   exportCsv: (yearMonth: string, filePath: string, workplaceId?: number | null) =>
     invoke<string>("export_csv", { yearMonth, filePath, workplaceId: workplaceId ?? null }),
@@ -53,8 +41,7 @@ export const api = {
   exportCsvAll: (yearMonth: string, dirPath: string) =>
     invoke<string>("export_csv_all", { yearMonth, dirPath }),
 
-  dumpYearly: (year: number, filePath: string) =>
-    invoke<string>("dump_yearly", { year, filePath }),
+  dumpYearly: (year: number, filePath: string) => invoke<string>("dump_yearly", { year, filePath }),
 
   getActiveEntries: () => invoke<WorkEntry[]>("get_active_entries"),
 
@@ -62,8 +49,7 @@ export const api = {
 
   getCurrentTime: () => invoke<string>("get_current_time"),
 
-  recalculateDurations: () =>
-    invoke<number>("recalculate_durations"),
+  recalculateDurations: () => invoke<number>("recalculate_durations"),
 
   // ── Workplace ──────────────────────────────────────────────────
   getWorkplaces: () => invoke<Workplace[]>("get_workplaces"),
@@ -74,23 +60,20 @@ export const api = {
   updateWorkplace: (id: number, name: string, color: string) =>
     invoke<Workplace>("update_workplace", { id, name, color }),
 
-  deleteWorkplace: (id: number) =>
-    invoke<void>("delete_workplace", { id }),
+  deleteWorkplace: (id: number) => invoke<void>("delete_workplace", { id }),
 
   setEntryWorkplace: (entryId: number, workplaceId: number | null) =>
     invoke<WorkEntry>("set_entry_workplace", { entryId, workplaceId }),
 
-  reorderWorkplaces: (ids: number[]) =>
-    invoke<void>("reorder_workplaces", { ids }),
+  reorderWorkplaces: (ids: number[]) => invoke<void>("reorder_workplaces", { ids }),
 
   updateEntry: (
     entryId: number,
     startTime: string,
     endTime: string,
     note: string,
-    workplaceId: number | null
-  ) =>
-    invoke<WorkEntry>("update_entry", { entryId, startTime, endTime, note, workplaceId }),
+    workplaceId: number | null,
+  ) => invoke<WorkEntry>("update_entry", { entryId, startTime, endTime, note, workplaceId }),
 };
 
 // 時間フォーマットユーティリティ

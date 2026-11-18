@@ -14,6 +14,7 @@ export default function App() {
   const [currentYearMonth, setCurrentYearMonth] = useState("");
   const [activeEntries, setActiveEntries] = useState<WorkEntry[]>([]);
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
+  const [monthlyStatus, setMonthlyStatus] = useState<"loading" | "ready" | "error">("loading");
   const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
   const [selectedWorkplaceId, setSelectedWorkplaceId] = useState<number | null>(null);
   const [monthlyFilterWorkplaceId, setMonthlyFilterWorkplaceId] = useState<number | null>(null);
@@ -65,16 +66,36 @@ export default function App() {
     }
   }, []);
 
+  // 常に最新の選択（月・勤務先）で取得するため、コールバックは ref 経由で選択を参照する。
+  // 古いコールバックが完了後に呼ばれても、現在の選択で更新される。
+  const selectionRef = useRef({ ym: "", wp: null as number | null });
+  selectionRef.current = { ym: currentYearMonth, wp: monthlyFilterWorkplaceId };
+  const monthlyRequestIdRef = useRef(0);
+
   const refreshMonthly = useCallback(async (ym?: string) => {
+    const { ym: selectedYm, wp } = selectionRef.current;
+    const target = ym || selectedYm;
+    // 表示中の月以外の明示指定は表示に反映しないため、リクエストIDを進める前に除外する
+    if (!target || target !== selectedYm) return;
+    const requestId = ++monthlyRequestIdRef.current;
     try {
-      const target = ym || currentYearMonth;
-      if (!target) return;
-      const report = await api.getMonthlyReport(target, monthlyFilterWorkplaceId);
+      const report = await api.getMonthlyReport(target, wp);
+      const sel = selectionRef.current;
+      // より新しいリクエストが出ている、または取得中に選択が変わった場合は破棄
+      if (requestId !== monthlyRequestIdRef.current || target !== sel.ym || wp !== sel.wp) {
+        return;
+      }
       setMonthlyReport(report);
+      setMonthlyStatus("ready");
     } catch (e) {
       setError(String(e));
+      // 最新の取得が失敗した場合は、古い締め状態のまま操作されないようレポートを破棄する
+      if (requestId === monthlyRequestIdRef.current) {
+        setMonthlyReport(null);
+        setMonthlyStatus("error");
+      }
     }
-  }, [currentYearMonth, monthlyFilterWorkplaceId]);
+  }, []);
 
   // 日付が変わったら即座に月次レポートを再取得（本日の勤務記録を切り替える）
   const prevTodayRef = useRef("");
@@ -101,8 +122,12 @@ export default function App() {
   }, [refreshToday, refreshMonthly]);
 
   useEffect(() => {
-    if (currentYearMonth) refreshMonthly();
-  }, [currentYearMonth, refreshMonthly]);
+    if (!currentYearMonth) return;
+    // 月・勤務先の切替直後は、新しい取得が完了するまで旧レポートを表示・操作させない
+    setMonthlyReport(null);
+    setMonthlyStatus("loading");
+    refreshMonthly();
+  }, [currentYearMonth, monthlyFilterWorkplaceId, refreshMonthly]);
 
   const handleClockIn = async () => {
     try {
@@ -248,6 +273,7 @@ export default function App() {
         <MonthlyView
           yearMonth={currentYearMonth}
           report={monthlyReport}
+          reportStatus={monthlyStatus}
           onYearMonthChange={setCurrentYearMonth}
           onRefresh={refreshMonthly}
           onDeleteEntry={handleDeleteEntry}

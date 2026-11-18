@@ -6,6 +6,7 @@ import type { MonthlyReport, Workplace } from "../types";
 interface Props {
   yearMonth: string;
   report: MonthlyReport | null;
+  reportStatus: "loading" | "ready" | "error";
   onYearMonthChange: (ym: string) => void;
   onRefresh: (ym?: string) => Promise<void>;
   onDeleteEntry: (entryId: number) => Promise<void>;
@@ -19,6 +20,7 @@ interface Props {
 export default function MonthlyView({
   yearMonth,
   report,
+  reportStatus,
   onYearMonthChange,
   onRefresh,
   onDeleteEntry,
@@ -37,6 +39,9 @@ export default function MonthlyView({
   const [editEnd, setEditEnd] = useState("");
   const [editNote, setEditNote] = useState("");
   const [editWorkplaceId, setEditWorkplaceId] = useState<number | null>(null);
+
+  // 月切り替え直後は前月のレポートが残っているため、締め状態を操作できるのは表示月と一致するときだけ
+  const reportMatchesMonth = report?.year_month === yearMonth;
 
   const changeMonth = (delta: number) => {
     const [y, m] = yearMonth.split("-").map(Number);
@@ -61,6 +66,26 @@ export default function MonthlyView({
       setMessage(
         `${yearMonth} を締めました。合計: ${formatMinutes(result.total_minutes)} (${result.working_days}日)`
       );
+      await onRefresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReopen = async () => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const ok = await ask(
+        `${yearMonth} の締めを解除します。\n解除後はこの月の記録を再び変更できます。\n年次ダンプ済みの場合、ダンプ内容と差異が生じる可能性があります。\nよろしいですか？`,
+        { title: "締めの解除", kind: "warning" }
+      );
+      if (!ok) return;
+      await api.reopenMonth(yearMonth);
+      setMessage(`${yearMonth} の締めを解除しました。`);
       await onRefresh();
     } catch (e) {
       setError(String(e));
@@ -178,8 +203,12 @@ export default function MonthlyView({
             <button className="btn-ghost" onClick={handleExportCsv} disabled={loading}>
               CSV出力
             </button>
-            {!report?.is_closed && (
-              <button className="btn-primary" onClick={handleClose} disabled={loading}>
+            {report?.is_closed ? (
+              <button className="btn-ghost" onClick={handleReopen} disabled={loading || !reportMatchesMonth}>
+                締めを解除
+              </button>
+            ) : (
+              <button className="btn-primary" onClick={handleClose} disabled={loading || !reportMatchesMonth}>
                 今月の勤務を締める
               </button>
             )}
@@ -424,7 +453,11 @@ export default function MonthlyView({
           className="card"
           style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)", fontSize: 13 }}
         >
-          この月の勤務記録はありません
+          {reportStatus === "loading"
+            ? "読み込み中..."
+            : reportStatus === "error"
+              ? "勤務記録を取得できませんでした"
+              : "この月の勤務記録はありません"}
         </div>
       )}
 

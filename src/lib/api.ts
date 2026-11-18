@@ -44,6 +44,9 @@ export const api = {
   closeMonth: (yearMonth: string) =>
     invoke<MonthlyClose>("close_month", { yearMonth }),
 
+  reopenMonth: (yearMonth: string) =>
+    invoke<void>("reopen_month", { yearMonth }),
+
   exportCsv: (yearMonth: string, filePath: string, workplaceId?: number | null) =>
     invoke<string>("export_csv", { yearMonth, filePath, workplaceId: workplaceId ?? null }),
 

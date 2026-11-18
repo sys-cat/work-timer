@@ -82,6 +82,7 @@ const entry = await invoke<WorkEntry>("clock_in");
 | `get_daily_entries` | 日別エントリ取得 |
 | `get_monthly_report` | 月間レポート生成 |
 | `close_month` | 月次締め処理 |
+| `reopen_month` | 月次締めの解除（締め記録を削除） |
 | `export_csv` | CSV出力 |
 | `dump_yearly` | 年次ダンプ（JSON） |
 | `get_active_entries` | 勤務中エントリ取得 |

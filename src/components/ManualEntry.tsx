@@ -26,7 +26,7 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
     if (!workDate || !startTime || !endTime) return;
     setLoading(true);
     try {
-      await onSubmit(workDate, startTime + ":00", endTime + ":00", note, workplaceId);
+      await onSubmit(workDate, `${startTime}:00`, `${endTime}:00`, note, workplaceId);
       setStartTime("");
       setEndTime("");
       setNote("");

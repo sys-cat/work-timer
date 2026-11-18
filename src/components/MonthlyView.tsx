@@ -1,5 +1,5 @@
+import { ask, open, save } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
-import { save, open, ask } from "@tauri-apps/plugin-dialog";
 import { api, formatMinutes, formatTimeShort } from "../lib/api";
 import type { MonthlyReport, Workplace } from "../types";
 

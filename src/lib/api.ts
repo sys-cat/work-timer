@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { WorkEntry, Workplace, DailySummary, MonthlyReport, MonthlyClose } from "../types";
+import type { DailySummary, MonthlyClose, MonthlyReport, WorkEntry, Workplace } from "../types";
 
 export const api = {
   clockIn: (workplaceId: number | null) => invoke<WorkEntry>("clock_in", { workplaceId }),

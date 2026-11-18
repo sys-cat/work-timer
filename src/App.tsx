@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { api } from "./lib/api";
-import type { WorkEntry, Workplace, MonthlyReport } from "./types";
-import TimerPanel from "./components/TimerPanel";
-import MonthlyView from "./components/MonthlyView";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ManualEntry from "./components/ManualEntry";
+import MonthlyView from "./components/MonthlyView";
 import SettingsPanel from "./components/SettingsPanel";
+import TimerPanel from "./components/TimerPanel";
+import { api } from "./lib/api";
+import type { MonthlyReport, WorkEntry, Workplace } from "./types";
 
 type Tab = "timer" | "monthly" | "manual" | "settings";
 

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import type { WorkEntry, DailySummary, Workplace } from "../types";
+import { useEffect, useState } from "react";
 import { formatMinutes, formatTimeShort } from "../lib/api";
+import type { DailySummary, WorkEntry, Workplace } from "../types";
 
 interface Props {
   activeEntries: WorkEntry[];

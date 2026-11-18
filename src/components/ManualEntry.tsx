@@ -3,7 +3,13 @@ import type { Workplace } from "../types";
 
 interface Props {
   today: string;
-  onSubmit: (workDate: string, startTime: string, endTime: string, note: string, workplaceId: number | null) => Promise<void>;
+  onSubmit: (
+    workDate: string,
+    startTime: string,
+    endTime: string,
+    note: string,
+    workplaceId: number | null,
+  ) => Promise<void>;
   workplaces: Workplace[];
   defaultWorkplaceId: number | null;
 }
@@ -50,13 +56,17 @@ export default function ManualEntry({ today, onSubmit, workplaces, defaultWorkpl
           >
             <option value="">未設定</option>
             {workplaces.map((w) => (
-              <option key={w.id} value={w.id}>{w.name}</option>
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
             ))}
           </select>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}
+      >
         <div>
           <label style={fieldLabel}>日付</label>
           <input

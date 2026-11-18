@@ -75,7 +75,8 @@ button:active {
   transform: scale(0.97);
 }
 
-input, select {
+input,
+select {
   font-family: inherit;
   font-size: 14px;
   padding: 8px 12px;
@@ -87,7 +88,8 @@ input, select {
   transition: border-color 0.15s;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   border-color: var(--accent);
 }
 
@@ -95,13 +97,17 @@ input:focus, select:focus {
   background: var(--accent);
   color: white;
 }
-.btn-primary:hover { opacity: 0.9; }
+.btn-primary:hover {
+  opacity: 0.9;
+}
 
 .btn-danger {
   background: var(--danger);
   color: white;
 }
-.btn-danger:hover { opacity: 0.9; }
+.btn-danger:hover {
+  opacity: 0.9;
+}
 
 .btn-ghost {
   background: transparent;
@@ -117,7 +123,9 @@ input:focus, select:focus {
   background: var(--success);
   color: white;
 }
-.btn-success:hover { opacity: 0.9; }
+.btn-success:hover {
+  opacity: 0.9;
+}
 
 .card {
   background: var(--bg-card);

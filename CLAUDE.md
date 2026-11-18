@@ -74,6 +74,8 @@ cargo test
 
 - 整形だけのコミットは `.git-blame-ignore-revs` に登録している（`git config blame.ignoreRevsFile .git-blame-ignore-revs` で blame から除外できる）
 - lint の例外は `biome-ignore` コメントに理由を書く
+- PR と main への push で `.github/workflows/ci.yml` が上記のチェック（`frontend` / `rust` の2ジョブ）を実行する
+- 依存更新は Dependabot（`.github/dependabot.yml`、週次）が PR を作る
 
 ## リリース（GitHub Actions）
 

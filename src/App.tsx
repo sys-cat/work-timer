@@ -121,6 +121,7 @@ export default function App() {
     return () => window.removeEventListener("focus", onFocus);
   }, [refreshToday, refreshMonthly]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: monthlyFilterWorkplaceId は refreshMonthly が ref 経由で参照するため、フィルタ切替時の再取得トリガーとして依存に残す
   useEffect(() => {
     if (!currentYearMonth) return;
     // 月・勤務先の切替直後は、新しい取得が完了するまで旧レポートを表示・操作させない

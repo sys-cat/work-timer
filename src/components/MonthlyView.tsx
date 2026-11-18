@@ -556,6 +556,8 @@ export default function MonthlyView({
       )}
 
       {confirmDeleteId !== null && (
+        // biome-ignore lint/a11y/noStaticElementInteractions: 背景クリックで閉じる補助操作。キーボード操作は「キャンセル」ボタンで可能
+        // biome-ignore lint/a11y/useKeyWithClickEvents: 同上
         <div
           onClick={() => setConfirmDeleteId(null)}
           style={{
@@ -568,6 +570,8 @@ export default function MonthlyView({
             zIndex: 100,
           }}
         >
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: 背景クリックで閉じないよう伝播を止めるだけで、操作対象ではない */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: 同上 */}
           <div
             className="card"
             onClick={(ev) => ev.stopPropagation()}

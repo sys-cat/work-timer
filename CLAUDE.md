@@ -56,6 +56,25 @@ npm run dev
 npm run build
 ```
 
+### Lint / 整形 / テスト
+
+```bash
+# フロント（Biome）
+npm run typecheck   # 型チェック（tsc）
+npm run lint        # lint + 整形チェック（biome check）
+npm run lint:fix    # 自動修正
+npm run format      # 整形
+npm test            # 単体テスト（vitest）
+
+# Rust（src-tauri で実行）
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
+- 整形だけのコミットは `.git-blame-ignore-revs` に登録している（`git config blame.ignoreRevsFile .git-blame-ignore-revs` で blame から除外できる）
+- lint の例外は `biome-ignore` コメントに理由を書く
+
 ## リリース（GitHub Actions）
 
 `v*` タグを push すると `.github/workflows/release.yml` が Windows / macOS(universal) / Linux(ubuntu-22.04) でビルドし、GitHub Release に**下書き**でインストーラを添付する。

@@ -516,7 +516,7 @@ fn write_csv_to_file(
 ) -> Result<String, String> {
     let mut wtr = csv::Writer::from_path(file_path).map_err(|e| e.to_string())?;
 
-    wtr.write_record(&[
+    wtr.write_record([
         "日付",
         "開始時刻",
         "終了時刻",
@@ -538,7 +538,7 @@ fn write_csv_to_file(
             .and_then(|id| wp_map.get(&id))
             .map(|s| s.as_str())
             .unwrap_or("");
-        wtr.write_record(&[
+        wtr.write_record([
             &entry.work_date,
             &entry.start_time,
             entry.end_time.as_deref().unwrap_or(""),
@@ -553,12 +553,12 @@ fn write_csv_to_file(
         grand_total += entry.duration_minutes;
     }
 
-    wtr.write_record(&["", "", "", "", "", "", ""])
+    wtr.write_record(["", "", "", "", "", "", ""])
         .map_err(|e| e.to_string())?;
-    wtr.write_record(&["--- 日別合計 ---", "", "", "", "", "", ""])
+    wtr.write_record(["--- 日別合計 ---", "", "", "", "", "", ""])
         .map_err(|e| e.to_string())?;
     for (date, minutes) in &daily_totals {
-        wtr.write_record(&[
+        wtr.write_record([
             date.as_str(),
             "",
             "",
@@ -570,9 +570,9 @@ fn write_csv_to_file(
         .map_err(|e| e.to_string())?;
     }
 
-    wtr.write_record(&["", "", "", "", "", "", ""])
+    wtr.write_record(["", "", "", "", "", "", ""])
         .map_err(|e| e.to_string())?;
-    wtr.write_record(&[
+    wtr.write_record([
         &format!("月合計 ({})", year_month),
         "",
         "",
